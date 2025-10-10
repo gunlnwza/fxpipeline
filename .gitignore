@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+
+# Notebooks
+*.ipynb
+
+# Data
+.cache/
+
+# Mac
+.DS_Store
+
+# Personal
+.ideas/
+/**/.env
+untrack/
