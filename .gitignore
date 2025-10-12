@@ -1,12 +1,22 @@
 # Python
 venv/
 __pycache__/
+.pytest_cache/
 
 # Notebooks
 *.ipynb
 
 # Data
 .cache/
+
+*.csv
+*.json
+*.txt
+
+*.png
+*.jpg
+
+*.pdf
 
 # Mac
 .DS_Store
