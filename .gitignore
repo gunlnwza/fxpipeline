@@ -8,6 +8,7 @@ __pycache__/
 
 # Data
 .cache/
+test_cache/
 
 *.csv
 *.json
@@ -26,3 +27,4 @@ __pycache__/
 .ideas/
 /**/.env
 untrack/
+trash/
