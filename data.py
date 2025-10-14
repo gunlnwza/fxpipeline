@@ -27,7 +27,11 @@ class DataTransformer(ABC):
 
 
 class DataLoader(ABC):
-    """Load from local cache"""
+    """Save and Load from local cache"""
+    @abstractmethod
+    def save(self, *args, **kwargs):
+        pass
+
     @abstractmethod
     def load(self, *args, **kwargs):
         pass
@@ -53,20 +57,30 @@ class TestTransformer(DataTransformer):
         return df
 
 
+# TODO: try out sqlite, parquet, or pickle?
 class TestLoader(DataLoader):
     """Just a test"""
     def __init__(self):
         super().__init__()
 
-    def load(self, ticker: str, start: Optional[str], end: Optional[str]) -> pd.DataFrame:
-        # TODO: make sqlite db, or use pickle?
+    def get_filename(self, ticker: str):
+        return Path("test_cache") / f"{ticker}.csv"
 
-        # TODO: find filename intelligently, save cache's dir name?
-        filename = Path("test_cache") / f"{ticker}.csv"
-        if not os.path.exists(filename):
-            # fallback: call extractor → transformer → save file
-            # TODO: delegate to extractor and transformer, then try loading again
-            raise FileNotFoundError(f"{filename} not found. Run extractor?")
+    def save(self, df: pd.DataFrame, ticker: str):
+        filename = self.get_filename(ticker)
+        df.to_csv(filename)
+
+    def load(self, ticker: str, start: Optional[str], end: Optional[str]) -> pd.DataFrame:
+        
+
+        filename = self.get_filename(ticker)
+        have_data = os.path.exists()  # TODO: also pay attention to time
+        if not have_data:
+            extractor = TestExtractor()
+            transormer = TestTransformer()
+            df = extractor.fetch(ticker)
+            df = transormer.clean(df)
+            self.save(df, ticker)
 
         df = pd.read_csv(filename, parse_dates=True, index_col="Date")
         if start:
@@ -74,22 +88,6 @@ class TestLoader(DataLoader):
         if end:
             df = df[df.index <= end]
         return df
-
-
-def get_prices(ticker: str, start: Optional[str], end: Optional[str]) -> pd.DataFrame:
-    ticker = ticker.upper()
-
-    loader = TestLoader()
-    try:
-        df = loader.load(ticker, start, end)
-    except FileNotFoundError:
-        extractor = TestExtractor()
-        df = extractor.fetch(ticker)
-        transormer = TestTransformer()
-        df = transormer.clean(df)
-        filename = Path("test_cache") / f"{ticker}.csv"
-        df.to_csv(filename)
-    return df
 
 
 if __name__ == "__main__":
@@ -101,5 +99,6 @@ if __name__ == "__main__":
     parser.add_argument("--end", type=str, default=None)
     args = parser.parse_args()
 
-    prices = get_prices(args.ticker, args.start, args.end)
+    loader = TestLoader()
+    prices = loader.load(args.ticker, args.start, args.end)
     print(prices)
