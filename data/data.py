@@ -45,10 +45,12 @@ class TestLoader(DataLoader):
         df = pd.read_csv(filename, parse_dates=True, index_col="Date")
         return df
 
-    def load(self, ticker: str, start: Optional[str], end: Optional[str]) -> pd.DataFrame:
+    def load(self, ticker: str, start: Optional[str] = None, end: Optional[str] = None) -> pd.DataFrame:
         filename = self.get_filename(ticker)
         if not os.path.exists(filename):
             df = self.extractor.fetch(ticker)
+            if len(df) == 0:
+                return None
             df = self.transformer.clean(df)
             self.save(df, ticker)
         else:
