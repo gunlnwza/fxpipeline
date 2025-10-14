@@ -43,8 +43,8 @@ class TestExtractor(DataExtractor):
     def __init__(self):
         super().__init__()
 
-    def fetch(self, ticker):
-        df = yf.download(ticker)
+    def fetch(self, ticker, start, end):
+        df = yf.download(ticker, start, end)
         return df
     
 
@@ -59,9 +59,10 @@ class TestTransformer(DataTransformer):
 
 # TODO: try out sqlite, parquet, or pickle?
 class TestLoader(DataLoader):
-    """Just a test"""
     def __init__(self):
         super().__init__()
+        self.extractor = TestExtractor()
+        self.transformer = TestTransformer()
 
     def get_filename(self, ticker: str):
         return Path("test_cache") / f"{ticker}.csv"
@@ -70,23 +71,50 @@ class TestLoader(DataLoader):
         filename = self.get_filename(ticker)
         df.to_csv(filename)
 
-    def load(self, ticker: str, start: Optional[str], end: Optional[str]) -> pd.DataFrame:
-        
+    def download_full(self, ticker: str) -> pd.DataFrame:
+        df = self.extractor.fetch(ticker, start="2015-01-01", end=None)
+        df = self.transformer.clean(df)
+        return df
 
+    def read_from_cache(self, ticker: str):
         filename = self.get_filename(ticker)
-        have_data = os.path.exists()  # TODO: also pay attention to time
-        if not have_data:
-            extractor = TestExtractor()
-            transormer = TestTransformer()
-            df = extractor.fetch(ticker)
-            df = transormer.clean(df)
+        df = pd.read_csv(filename, parse_dates=True, index_col="Date")
+        return df
+
+    def update_if_stale(self, df: pd.DataFrame, ticker: str) -> pd.DataFrame:
+        last_date = df.index[-1]
+        today = pd.Timestamp.today().normalize() - pd.Timedelta(days=1)
+
+        if last_date >= today:
+            return df  # Fresh enough
+
+        # Fetch from next day after last_date
+        fetch_start = last_date + pd.Timedelta(days=1)
+        new_data = self.extractor.fetch(ticker, fetch_start, None)
+        new_data = self.transformer.clean(new_data)
+
+        if new_data is not None and not new_data.empty:
+            df = pd.concat([df, new_data])
+            df = df[~df.index.duplicated(keep='last')]  # Deduplicate just in case
             self.save(df, ticker)
 
-        df = pd.read_csv(filename, parse_dates=True, index_col="Date")
+        return df
+
+    def load(self, ticker: str, start: Optional[str], end: Optional[str]) -> pd.DataFrame:
+        filename = self.get_filename(ticker)
+
+        if not os.path.exists(filename):
+            df = self.download_full(ticker)
+            self.save(df, ticker)
+        else:
+            df = self.read_from_cache(ticker)
+            df = self.update_if_stale(df, ticker)
+
+        # Filter to start/end range
         if start:
-            df = df[df.index >= start]
+            df = df[df.index >= pd.to_datetime(start)]
         if end:
-            df = df[df.index <= end]
+            df = df[df.index <= pd.to_datetime(end)]
         return df
 
 
