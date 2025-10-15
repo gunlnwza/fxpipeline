@@ -1,22 +1,4 @@
 # TODO
 
-- TODO: Also a Subclass of DataRequest
-- TODO: Handle stale data
-- TODO: REFACTOR REFACTOR REFACTOR REFACTOR REFACTOR
-- TODO: Track Start-End range
-- TODO: Track source
-- TODO: check + learn pips maths
-- TODO: check maths
-- TODO: derive summaries from history
-- TODO: download with "full" if first time or too old,
-- TODO: generalize to Macro and Stocks data later
-- TODO: it would just know what type of data it is, and act accordingly
-- TODO: it's just so hard to access state's attributes: account, data
-- TODO: make histories neater, likely need to group them
-- TODO: make the Exceptions more specific
-- TODO: need to make it time-based, not order-based
-- TODO: raise error if client tries to access future
-- TODO: refactor the crossover logic
-- TODO: use groupby
-- TODO: use rich library for beautifulness ✨
-- TODO: work on data.py until it is a mini-Bloomberg-Terminal
+- Implement backtest
+- Implement data

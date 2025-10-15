@@ -33,7 +33,7 @@ class TestLoader(DataLoader):
         self.transformer = TestTransformer()
 
     def get_filename(self, ticker: str):
-        return Path("test_cache") / f"{ticker}.csv"
+        return Path(".test_cache") / f"{ticker}.csv"
 
     def save(self, df: pd.DataFrame, ticker: str):
         filename = self.get_filename(ticker)
