@@ -22,16 +22,11 @@ class TimeHorizonDataFrame:
     """
     def __init__(self, data: pd.DataFrame):
         self.data = data.reset_index(drop=True)
-        self._current_row_index = 0
-
-    @property
-    def i(self):
-        """Alias for _current_row_index"""
-        return self._current_row_index
+        self.current_idx = 0
     
     def __str__(self):
-        return self.data.iloc[:self._current_row_index].__str__()
-    
+        return self.data.iloc[:self.current_idx].__str__()
+
     @property
     def n(self):
         """Number of rows"""
@@ -39,31 +34,36 @@ class TimeHorizonDataFrame:
 
     def next(self):
         """Advance to the next row."""
-        if self._current_row_index > len(self.data) - 1:
+        if self.current_idx > len(self.data) - 1:
             raise StopIteration("Reached end of data")
-        self._current_row_index += 1
-
-    def reset(self):
-        """Reset the time horizon"""
-        self._current_row_index = 0
+        self.current_idx += 1
 
     def view(self):
         """Return data up to current time"""
-        return self.data.iloc[:self._current_row_index + 1]
+        return self.data.iloc[:self.current_idx + 1]
 
     def tail(self, n: int = 5):
         """Get last n rows"""
         if n <= 0:
             raise ValueError("n must be positive")
-        return self.view().tail(n)
-    
+        if self.current_idx < self.n:  # TODO implement to not use view(), because chain indexing is bad
+            return self.view()
+        else:
+            return self.view().iloc[-n:]
+
     def current_point(self):  # TODO: move to SimulationData (wrap TimeHorizonDataFrame)
         """Return current point."""
-        index = min(self._current_row_index, self.n - 1)
-        return PricePoint(index, self.data.loc[index, 0])
+        index = min(self.current_idx, self.n - 1)
+        return PricePoint(index, self.data.iloc[index, 0])
 
-    def get(self, i: int):  # TODO: might delete
-        """Unsafe: use with caution; allows specific historical access."""
-        if i > self._current_row_index:
-            raise IndexError("Trying to access future data")
-        return self.data.iloc[i]
+
+    # DEPRECATED
+    # def get(self, i: int):  # TODO: might delete
+    #     """Unsafe: use with caution; allows specific historical access."""
+    #     if i > self._current_idx:
+    #         raise IndexError("Trying to access future data")
+    #     return self.data.iloc[i]
+
+    # def reset(self):
+    #     """Reset the time horizon"""
+    #     self._current_idx = 0

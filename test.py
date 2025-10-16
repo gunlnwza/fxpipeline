@@ -13,10 +13,8 @@ def plot_result(summary: dict):
     plt.xlabel("Index")
     plt.ylabel("Price")
     plt.plot(data)
-    for o in orders:
-        xs = [o.open_point.index, o.close_point.index]
-        ys = [o.open_point.price, o.close_point.price]
-        plt.plot(xs, ys, color="green", lw=2, ls="--", ms=5, marker="o",)
+    for order in orders:
+        plt.plot(order[:2], order[-2:], color="green", lw=2, ls="--", ms=5, marker="o",)
     plt.show()
 
 
@@ -24,7 +22,7 @@ if __name__ == "__main__":
     import pandas as pd
 
     np.random.seed(42)
-    n = 10
+    n = 42
     data = pd.DataFrame(
         np.full(n, 42) + np.random.normal(0.1, 1, n).cumsum()
     )

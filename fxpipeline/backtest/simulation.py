@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .price import PricePoint, TimeHorizonDataFrame
+from .price import TimeHorizonDataFrame
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -21,7 +21,7 @@ class Simulation:
         self.summary = None
 
     def run(self):
-        for _ in range(self.data.i, self.data.n):
+        for _ in range(self.data.current_idx, self.data.n):
             point = self.data.current_point()
             if self.account.equity(point) <= 0:
                 break
