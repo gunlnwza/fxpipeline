@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .order import Order
+from ..to_write.order import Order
 from .price_point import PricePoint
 from .action import BuyAction, SellAction
 

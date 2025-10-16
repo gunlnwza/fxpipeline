@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from .data import Ticker
-from .price_point import PricePoint
+from ..refactored.price_point import PricePoint
 
 
 # TODO: check + learn pips maths

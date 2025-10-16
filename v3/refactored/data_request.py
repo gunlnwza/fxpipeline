@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .data import PriceMetaData
+from ..to_write.data import PriceMetaData
 
 
 @dataclass

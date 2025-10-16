@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from .loader.loader import Data
 from .core import Account, State, Action
-from .strategies import Strategy
+from ..to_write.strategies import Strategy
 from ..untrack.metrics import Summary
 from ..utils.utils import PrettyLogger
 

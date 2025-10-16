@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .data import Ticker
+from ..to_write.data import Ticker
 
 
 @dataclass

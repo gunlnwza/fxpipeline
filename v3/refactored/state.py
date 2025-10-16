@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .data import Data
+from ..to_write.data import Data
 from .account import Account
 from .price_point import PricePoint
 
