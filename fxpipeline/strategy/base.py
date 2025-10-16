@@ -4,10 +4,10 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..backtest import Account, PricePoint
+    from ..backtest import Account, TimeHorizonDataFrame
 
 
 class Strategy(ABC):
     @abstractmethod
-    def act(self, account: Account, point: PricePoint):  # TODO[architecure]: make act() signature good
+    def act(self, account: Account, data: TimeHorizonDataFrame):  # TODO[architecure]: make act() signature good
         pass

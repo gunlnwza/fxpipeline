@@ -4,6 +4,8 @@ Notes in phone
 
 # Valuation Exam
 
+> 2 pages of A4 cheatsheet allowed
+
 ## characteristics of convertible bonds
 factors of convertible bonds value:
 stocks price, volatility, risk free rate,TTM of the bond, conversion price

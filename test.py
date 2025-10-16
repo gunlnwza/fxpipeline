@@ -21,7 +21,13 @@ def plot_result(summary: dict):
 
 
 if __name__ == "__main__":
-    data = np.full(100, 42) + np.random.normal(0.1, 1, 100).cumsum()
+    import pandas as pd
+
+    np.random.seed(42)
+    n = 10
+    data = pd.DataFrame(
+        np.full(n, 42) + np.random.normal(0.1, 1, n).cumsum()
+    )
     strategy = RandomAction()
     account = Account(100)
 
