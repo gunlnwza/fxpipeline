@@ -29,6 +29,7 @@ htmlcov/
 # ===================================
 .cache/
 test_cache/
+.test_cache/
 *.csv
 *.tsv
 *.json
@@ -68,4 +69,4 @@ test_cache/
 # ===================================
 # Project-specific trash or scratch
 # ===================================
-trash/
+.trash/
