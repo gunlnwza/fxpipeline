@@ -30,6 +30,7 @@ htmlcov/
 .cache/
 test_cache/
 .test_cache/
+*.zip
 *.csv
 *.tsv
 *.json

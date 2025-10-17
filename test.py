@@ -1,52 +1,42 @@
-import pprint
+import signal
+import sys
+import os
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+import gymnasium as gym
+from stable_baselines3 import DQN
 
-from fxpipeline.strategy import RandomAction
-from fxpipeline.backtest import Account, Simulation
+def sigint_handler(sig, frame):
+    sys.exit(0)
 
-
-def plot_base():
-    plt.title("Backtest Result")
-    plt.xlabel("Index")
-    plt.ylabel("Price")
-
-def plot_price(arr):
-    plt.plot(arr)
-
-def plot_order(orders: list):
-    for order in orders:
-        plt.plot(order[:2], order[-2:], color="green", lw=2, ls="--", ms=5, marker="o",)
+signal.signal(signal.SIGINT, sigint_handler)
 
 
-if __name__ == "__main__":
-    # np.random.seed(42)
+env = gym.make("CartPole-v1", render_mode="human")
 
-    n = 1000
-    drift = 1
-    vol = 0.8
+use_existing = True
+filename = "dqn_cartpole"
+if use_existing and os.path.exists(f"{filename}.zip"):
+    model = DQN.load(filename, env)
+    model.exploration_initial_eps = 0.10
+    model.exploration_final_eps = 0.05
+    print("Loaded model")
+else:
+    model = DQN("MlpPolicy", env,
+                exploration_fraction=0.5,
+                exploration_initial_eps=0.20,
+                exploration_final_eps=0.05,
+                verbose=1)
+    print("Created new model")
 
-    # Random walk drift (looks like sideway forex price)
-    # arr = np.full(n, 42) + np.random.normal(drift, vol, n).cumsum()
-    
-    # GBM (looks just like actual forex price)
-    T = 1
-    time_step = T / n
-    dt = np.full(n, time_step).cumsum()
-    dW_t = np.random.normal(0, np.sqrt(time_step), n).cumsum()
-    arr = 42 * np.exp((drift - vol**2 / 2) * dt + vol * dW_t)
+obs, _ = env.reset()
+last_i = 0
+for i in range(2000):
+    action, _states = model.predict(obs, deterministic=True)
+    obs, reward, terminated, truncated, _ = env.step(action)
+    if i % 25 == 0:
+        print(i, obs)
+    if terminated:
+        print(f"Terminated, Survived for {i - last_i} frame")
+        break
 
-    df = pd.DataFrame(arr)
-    strategy = RandomAction()
-    account = Account(100)
-
-    simulation = Simulation(df, strategy, account)
-    simulation.run()
-    pprint.pprint(simulation.summary)
-
-    plot_base()
-    plot_price(arr)
-    plot_order(simulation.summary["account"]["orders"])
-    plt.show()
+env.close()
