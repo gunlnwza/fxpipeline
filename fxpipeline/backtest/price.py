@@ -20,27 +20,27 @@ class TimeHorizonDataFrame:
     Wrapper for DataFrame that prevents peeking into future rows.
     Meant for backtesting: only allows access up to the current timestep.
     """
-    def __init__(self, data: pd.DataFrame):
-        self.data = data.reset_index(drop=True)
+    def __init__(self, df: pd.DataFrame):
+        self.df = df.reset_index(drop=True)
         self.current_idx = 0
     
     def __str__(self):
-        return self.data.iloc[:self.current_idx].__str__()
+        return self.df.iloc[:self.current_idx].__str__()
 
     @property
     def n(self):
         """Number of rows"""
-        return len(self.data)
+        return len(self.df)
 
     def next(self):
         """Advance to the next row."""
-        if self.current_idx > len(self.data) - 1:
-            raise StopIteration("Reached end of data")
+        if self.current_idx > len(self.df) - 1:
+            raise StopIteration("Reached end of df")
         self.current_idx += 1
 
     def view(self):
-        """Return data up to current time"""
-        return self.data.iloc[:self.current_idx + 1]
+        """Return df up to current time"""
+        return self.df.iloc[:self.current_idx + 1]
 
     def tail(self, n: int = 5):
         """Get last n rows"""
@@ -54,7 +54,7 @@ class TimeHorizonDataFrame:
     def current_point(self):  # TODO: move to SimulationData (wrap TimeHorizonDataFrame)
         """Return current point."""
         index = min(self.current_idx, self.n - 1)
-        return PricePoint(index, self.data.iloc[index, 0])
+        return PricePoint(index, self.df.iloc[index, 0])
 
 
     # DEPRECATED

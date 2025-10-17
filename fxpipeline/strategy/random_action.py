@@ -14,8 +14,8 @@ class RandomAction(Strategy):
     def act(self, account: Account, data: TimeHorizonDataFrame):
         point = data.current_point()
         if not account.order:
-            if np.random.random() < 0.5:
+            if np.random.random() < 0.05:
                 account.buy(point)  # clearly need a np.array wrapper that expose current price, maybe a tiny pd.DataFrame design?
         else:
-            if np.random.random() < 0.1:
+            if np.random.random() < 0.05:
                 account.close(point)

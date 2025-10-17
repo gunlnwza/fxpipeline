@@ -31,7 +31,7 @@ class Simulation:
         if self.account.order:
             self.account.close(point)
 
-        self.summary = {"account": self.account.stats.to_dict()} 
+        self.summary = {"data": self.data.df, "account": self.account.stats.to_dict()}
 
 
 if __name__ == "__main__":
