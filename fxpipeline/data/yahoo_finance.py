@@ -5,7 +5,7 @@ from typing import Optional
 import pandas as pd
 import yfinance as yf
 
-from base import DataExtractor, DataLoader, DataTransformer
+from base import DataExtractor, DataTransformer, DataLoader
 
 
 class YahooFinanceExtractor(DataExtractor):

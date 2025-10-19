@@ -14,9 +14,7 @@ class DataExtractor(ABC):
 
 
 class DataTransformer(ABC):
-    """
-    Validate and clean data from DataExtractor
-    """
+    """Validate and clean data from DataExtractor"""
     @abstractmethod
     def clean(self, df: pd.DataFrame, *args, **kwargs):
         pass
