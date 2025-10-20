@@ -1,10 +1,16 @@
 import os
-import datetime
+import sys
+import signal
+
 from dataclasses import dataclass
+from itertools import permutations
+import random
+import time
+import datetime
 
 import pandas as pd
 from dotenv import load_dotenv 
-
+from urllib3.exceptions import MaxRetryError
 from polygon import RESTClient
 
 
@@ -20,7 +26,7 @@ class ForexPrice:
     req: ForexPriceRequest  # remember the 'order' of this dish
 
 
-def get_polygon_forex_price(req: ForexPriceRequest, api_key: str) -> ForexPrice:
+def download_polygon_forex_price(req: ForexPriceRequest, api_key: str) -> ForexPrice:
     # download
     client = RESTClient(api_key)
     aggs = []
@@ -30,7 +36,9 @@ def get_polygon_forex_price(req: ForexPriceRequest, api_key: str) -> ForexPrice:
     ):
         aggs.append(a)
 
-    # clean
+    if not aggs:
+        return None
+
     df = pd.DataFrame(aggs)
     df.index = pd.to_datetime(df["timestamp"], unit="ms")
     for name in ("timestamp", "transactions", "otc"):
@@ -51,19 +59,78 @@ def load_polygon_forex_price(req: ForexPriceRequest, path: str) -> ForexPrice:
     return ForexPrice(df, req)
 
 
-if __name__ == "__main__":
+def fetch_price(ticker: str, api_key: str, path: str):
+    """pretty much git fetch, but for polygon data"""
     today = datetime.datetime.now()
-    start = today - datetime.timedelta(730)  # free tier only give latest 2 years data
-    req = ForexPriceRequest("EURUSD", start, today)
+    start = today - datetime.timedelta(730)
+    req = ForexPriceRequest(ticker, start, today)
+
+    data = download_polygon_forex_price(req, api_key)
+    if not data:
+        raise ValueError("Data is None, not downloaded")
+
+    # TODO: outer join with old data
+    save_polygon_forex_price(data, path)
+
+
+def make_pairs(currencies: list[str]):
+    priority = {
+        "EUR": 9,
+        "SEK": 8,
+        "NOK": 7,
+        "GBP": 6,
+        "AUD": 5,
+        "NZD": 4,
+        "USD": 3,
+        "CAD": 2,
+        "CHF": 1,
+        "JPY": 0
+    }
+    pairs = []
+    for a, b in permutations(currencies, 2):
+        pa = priority.get(a, -1)
+        pb = priority.get(b, -1)
+        if pa > pb:
+            pairs.append(a + b)
+    return pairs
+
+
+def sigint_handler(sig, frame):
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    signal.signal(signal.SIGINT, sigint_handler)
 
     load_dotenv()
     api_key = os.getenv("POLYGON_API_KEY")
+    path = ".polygon_cache"
 
-    # data = get_polygon_forex_price(req, api_key)
-    # print(data)
-    # save_polygon_forex_price(data, ".polygon_cache")
-    # print("Save to cache")
+    currencies = ["AUD", "CAD", "EUR", "JPY", "NZD", "NOK", "GBP", "SEK", "CHF", "USD"]
+    tickers = make_pairs(currencies)
+    # tickers = ["AUDNOK"]
+    for ticker in tickers:
+        ticker_2 = ticker[3:] + ticker[:3]
 
-    print("Load from cache")
-    data = load_polygon_forex_price(req, ".polygon_cache")
-    print(data)
+        filename = f"{path}/{ticker}.csv"
+        filename_2 = f"{path}/{ticker_2}.csv"
+        if os.path.exists(filename):
+            print(f"We already have {filename} ; Skipping.")
+            continue
+        if os.path.exists(filename_2):
+            print(f"We already have {filename_2} ; Skipping.")
+            continue
+
+        for attempt in range(3):
+            try:
+                print(f"Fetching {ticker} (attempt {attempt + 1})...")
+                fetch_price(ticker, api_key, path)
+                time.sleep(5)
+                break
+            except MaxRetryError as e:
+                wait = 30
+                print(f"Error: {e} ; retrying in {wait:.1f}s...")
+                time.sleep(wait)
+            except ValueError as e:
+                ticker = ticker_2
+                print(f"Error: empty data ; retrying with {ticker}")
