@@ -28,7 +28,11 @@ class CurrencyPair:
     def __init__(self, cur_1: str, cur_2: str):
         cur_1 = cur_1.upper()
         cur_2 = cur_2.upper()
-        if CurrencyPair.priority.get(cur_1, -1) > CurrencyPair.priority.get(cur_2, -1):
+
+        # swap currencies if the 1st is lesser than 2nd in prestiege (we need 1st > 2nd)
+        importance_1 = CurrencyPair.priority.get(cur_1, -1)
+        importance_2 = CurrencyPair.priority.get(cur_2, -1)
+        if importance_1 < importance_2:
             cur_1, cur_2 = cur_2, cur_1
 
         self.cur_1 = cur_1

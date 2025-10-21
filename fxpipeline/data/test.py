@@ -1,15 +1,28 @@
 import os
 import sys
 import signal
-
 import time
 import datetime
+import logging
 
 from dotenv import load_dotenv 
 from urllib3.exceptions import MaxRetryError
 
 from core import ForexPriceRequest, make_pairs, CurrencyPair
 from polygon_data import download_polygon_forex_price, save_polygon_forex_price
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("polygon_data").setLevel(logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 
 def sigint_handler(sig, frame):
@@ -34,17 +47,19 @@ def fetch_price(ticker: str, api_key: str, path: str):
     save_polygon_forex_price(data, path)
 
 
-def attempt_fetch(ticker, retries=3, max_retry_wait=20):
+def attempt_fetch(ticker, retries=5, max_retry_wait=30):
     """attempting to fetch for several times"""
 
+    logger.info(f"Fetching {ticker}...")
     for attempt in range(1, retries + 1):
         try:
-            print(f"Fetching {ticker} (attempt {attempt})...")
+            logger.debug(f"Fetching {ticker} (attempt {attempt})...")
             fetch_price(ticker, api_key, path)
             return True
         except MaxRetryError as e:
-            print(f"Error: {e} ; retrying in {max_retry_wait:.1f}s...")
-            time.sleep(max_retry_wait)
+            logger.error(f"{e} ; retrying in {max_retry_wait:.1f}s...")
+            if attempt < retries:
+                time.sleep(max_retry_wait)
 
     return False
 
@@ -54,7 +69,7 @@ def fetch_all_pairs(currencies):
     for pair in pairs:
         filename = f"{path}/{pair.ticker}.csv"
         if os.path.exists(filename):
-            print(f"We already have '{filename}' ; Skipping.")
+            logger.debug(f"We already have '{filename}' ; Skipping")
             continue
 
         success = attempt_fetch(pair.ticker)
@@ -62,7 +77,7 @@ def fetch_all_pairs(currencies):
             continue
         success = attempt_fetch(pair.reverse_ticker)
         if not success:
-            print(f"Warning: No data available for '{pair.ticker}', perhaps too exotic")
+            logger.warning(f"No data available for '{pair.ticker}', perhaps too exotic")
 
 
 if __name__ == "__main__":
@@ -73,5 +88,9 @@ if __name__ == "__main__":
     path = ".polygon_cache"
 
     # TODO: would be nice to remember what exotic pairs are not available
-    currencies = ["AUD", "CAD", "EUR", "JPY", "NZD", "NOK", "GBP", "SEK", "CHF", "USD", "THB"]
+
+    # currencies = ["AUD", "CAD", "EUR", "JPY", "NZD", "NOK", "GBP", "SEK", "CHF", "USD", "THB"]
+    currencies = ["AUD", "EUR", "USD", "JPY", "GBP", "NZD", "CHF"]
+    # currencies = ["AUD", "EUR", "USD"]
+    # currencies = [""]
     fetch_all_pairs(currencies)
