@@ -1,6 +1,6 @@
 import pandas as pd
 
-from base import DataExtractor, DataTransformer, DataLoader
+from fxpipeline.data.dont_like.base import DataExtractor, DataTransformer, DataLoader
 
 
 class AlphaVantageAPI(DataLoader):

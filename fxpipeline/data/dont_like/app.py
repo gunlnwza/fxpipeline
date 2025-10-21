@@ -2,7 +2,7 @@ import streamlit as st
 import datetime
 import plotly.graph_objects as go
 
-from fxpipeline.data.main import TestLoader
+from fxpipeline.data.dont_like.main import TestLoader
 
 
 def render(df):

@@ -5,8 +5,8 @@ from typing import Optional
 from dotenv import load_dotenv
 
 # from alpha_vantage_data import 
-from polygon_data import PolygonExtractor, PolygonTransformer, PolygonLoader
-from yahoo_finance_data import YahooFinanceExtractor, YahooFinanceTransformer, YahooFinanceLoader
+from fxpipeline.data.dont_like.polygon_data import PolygonExtractor, PolygonTransformer, PolygonLoader
+from fxpipeline.data.dont_like.yahoo_finance_data import YahooFinanceExtractor, YahooFinanceTransformer, YahooFinanceLoader
 
 import pandas as pd
 
