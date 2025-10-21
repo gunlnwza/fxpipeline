@@ -20,20 +20,22 @@ def get_model(name, env):
         return DQN("MlpPolicy", env, verbose=1)
 
 
-def train(model):
-    model.learn(10_000)
+def train(model, timesteps):
+    model.learn(timesteps)
     model.save("baseline")
 
 
-def plot_result(prices, buys):
+def plot_result(prices, fast_ma, slow_ma, buys):
     plt.figure(figsize=(12, 6))
     plt.title("Result")
     plt.xlabel("Index")
     plt.ylabel("Price")
     
     plt.plot(prices)
+    plt.plot(fast_ma)
+    plt.plot(slow_ma)
     for band in buys:
-        plt.axvspan(band[0], band[1], color="green", alpha=0.5)
+        plt.axvspan(band[0], band[1], color="green", alpha=0.3)
 
     plt.show()
 
@@ -56,20 +58,21 @@ def test(model, env):
         if terminated or truncated:
             break
 
-    plot_result(env.prices, buys)
+    plot_result(env.prices, env.fast_ma, env.slow_ma, buys)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--ticker", default="EURUSD")
+    parser.add_argument("--timesteps", type=int, default=10000)
     parser.add_argument("-t", "--test", action="store_false")
     args = parser.parse_args()
 
-    env = TradingEnv(f".polygon_cache/{args.ticker}")
+    env = TradingEnv(f".polygon_cache/{args.ticker}", 42)
     model = get_model("baseline", env)
     if args.test:
         print("Train")
-        train(model)
+        train(model, args.timesteps)
     else:
         print("Test")
         test(model, env)
