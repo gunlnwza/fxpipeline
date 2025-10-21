@@ -106,9 +106,9 @@ if __name__ == "__main__":
     api_key = os.getenv("POLYGON_API_KEY")
     path = ".polygon_cache"
 
-    currencies = ["AUD", "CAD", "EUR", "JPY", "NZD", "NOK", "GBP", "SEK", "CHF", "USD"]
+    # currencies = ["AUD", "CAD", "EUR", "JPY", "NZD", "NOK", "GBP", "SEK", "CHF", "USD", "THB"]
+    currencies = ["THB", "JPY", "SEK"]
     tickers = make_pairs(currencies)
-    # tickers = ["AUDNOK"]
     for ticker in tickers:
         ticker_2 = ticker[3:] + ticker[:3]
 
@@ -121,8 +121,11 @@ if __name__ == "__main__":
             print(f"We already have {filename_2} ; Skipping.")
             continue
 
+        use_2 = False
         for attempt in range(3):
             try:
+                if use_2:
+                    ticker = ticker_2
                 print(f"Fetching {ticker} (attempt {attempt + 1})...")
                 fetch_price(ticker, api_key, path)
                 time.sleep(5)
@@ -132,5 +135,9 @@ if __name__ == "__main__":
                 print(f"Error: {e} ; retrying in {wait:.1f}s...")
                 time.sleep(wait)
             except ValueError as e:
-                ticker = ticker_2
-                print(f"Error: empty data ; retrying with {ticker}")
+                if use_2:
+                    print(f"{ticker} or {ticker_2} is not available ; Skipping.")  # TODO: would be nice to remember what exotic pairs are not available
+                    break
+                use_2 = True
+                print(f"Error: empty data ; retrying with {ticker_2}")
+                time.sleep(3)
