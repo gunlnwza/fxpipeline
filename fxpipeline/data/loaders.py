@@ -3,14 +3,13 @@ from io import StringIO
 from abc import ABC, abstractmethod
 import logging
 import requests
-import datetime
 import time
 
 import pandas as pd
 from urllib3.exceptions import MaxRetryError
 from polygon import RESTClient
 
-from core import ForexPriceRequest, ForexPrice
+from core import ForexPriceRequest, ForexPrice, make_forex_price_request
 from currencies import make_pairs
 
 logger = logging.getLogger(__name__)
@@ -30,17 +29,32 @@ class ForexPriceLoader(ABC):
     def download(req: ForexPriceRequest, /) -> ForexPrice:
         pass
 
-    def save(self, data: ForexPrice):  # TODO: delegate to dedicated database store
+    # TODO[database]: delegate to dedicated database store
+    def save(self, data: ForexPrice):
+        self._save(data.df, data.req.pair.ticker)
+
+    # TODO[refactor]: lol, I just want easy interface,
+    # but it's getting spaghetti now, but this one resemble pandas's though
+    def _save(self, df: pd.DataFrame, ticker: str):
         os.makedirs(self.path, exist_ok=True)
-        filename = f"{self.path}/{data.req.pair}.csv"
-        data.df.to_csv(filename)
+        filename = f"{self.path}/{ticker}.csv"
+        df.to_csv(filename)
         logger.info(f"Save data to '{filename}'")
 
+    def load_every_row(self, ticker: str) -> pd.DataFrame:
+        """
+        load the entire time range of the ticker
+        """
+        filename = f"{self.path}/{ticker}.csv"
+        return pd.read_csv(filename, index_col="timestamp", parse_dates=True)
+
     def load(self, req: ForexPriceRequest) -> ForexPrice:
-        filename = f"{self.path}/{req.pair}.csv"
-        df = pd.read_csv(filename, index_col="timestamp", parse_dates=True)
-        return ForexPrice(df, req)
-    
+        """
+        load, and give only the slice of requested time range
+        """
+        df = self.load_every_row(req.pair.ticker)
+        return ForexPrice(df[(req.start <= df.index) & (df.index <= req.end)], req)
+
     def have_in_cache(self, req: ForexPriceRequest) -> bool:
         filename = f"{self.path}/{req.pair}.csv"
         if os.path.exists(filename):
@@ -54,7 +68,14 @@ class ForexPriceLoader(ABC):
         data = self.download(req)
         if not data:
             raise ValueError("Data is None, meaning is has not been downloaded")
-        self.save(data)  # TODO: outer join with old data, (load-join-save)
+
+        # TODO[download]: subtract time range and only download the really needed newer portion
+        old_df = self.load_every_row(req.pair.ticker)
+        new_df = pd.concat([old_df, data.df], ignore_index=False)
+        new_df = new_df[~new_df.index.duplicated(keep="last")]
+        self._save(new_df, req.pair.ticker)
+
+        return data
 
     def fetch_with_retries(self, req: ForexPriceRequest, retries=5, max_retry_wait=30) -> bool:
         """
@@ -72,12 +93,13 @@ class ForexPriceLoader(ABC):
                     time.sleep(max_retry_wait)
         return False
 
-    def fetch_all(self, currencies: list[str]):
+    def fetch_all_pairs(self, currencies: list[str], days=1000):
+        """
+        fetch every combination of the given currencies
+        """
         pairs = make_pairs(currencies)
-        today = datetime.datetime.now()
-        start = today - datetime.timedelta(730)
         for pair in pairs:
-            req = ForexPriceRequest(pair, start, today)
+            req = make_forex_price_request(pair.ticker, days)
             if self.have_in_cache(req):
                 logger.debug(f"We already have '{req}' ; Skipping")
                 continue
