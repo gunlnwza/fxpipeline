@@ -26,7 +26,7 @@ class ForexPriceLoader(ABC):
         self.api_key = api_key
 
     @abstractmethod
-    def download(req: ForexPriceRequest, /) -> ForexPrice:
+    def download(req: ForexPriceRequest, **kwargs) -> ForexPrice:
         pass
 
     # TODO[database]: delegate to dedicated database store
@@ -61,23 +61,26 @@ class ForexPriceLoader(ABC):
             return True
         return False
 
-    def fetch(self, req: ForexPriceRequest):
+    def fetch(self, req: ForexPriceRequest, **kwargs):
         """
         pretty much git fetch, download and cache
         """
-        data = self.download(req)
+        data = self.download(req, **kwargs)
         if not data:
             raise ValueError("Data is None, meaning is has not been downloaded")
 
         # TODO[download]: subtract time range and only download the really needed newer portion
-        old_df = self.load_every_row(req.pair.ticker)
-        new_df = pd.concat([old_df, data.df], ignore_index=False)
-        new_df = new_df[~new_df.index.duplicated(keep="last")]
+        if self.have_in_cache(req):
+            old_df = self.load_every_row(req.pair.ticker)
+            new_df = pd.concat([old_df, data.df], ignore_index=False)
+            new_df = new_df[~new_df.index.duplicated(keep="last")]
+        else:
+            new_df = data.df
         self._save(new_df, req.pair.ticker)
 
         return data
 
-    def fetch_with_retries(self, req: ForexPriceRequest, retries=5, max_retry_wait=30) -> bool:
+    def fetch_with_retries(self, req: ForexPriceRequest, retries=5, max_retry_wait=30, **kwargs) -> bool:
         """
         attempting to fetch for several times
         """
@@ -85,7 +88,7 @@ class ForexPriceLoader(ABC):
         for attempt in range(1, retries + 1):
             try:
                 logger.debug(f"Fetching {req.pair} (attempt {attempt})...")
-                self.fetch(req)
+                self.fetch(req, **kwargs)
                 return True
             except MaxRetryError as e:
                 logger.error(f"MaxRetryError: {e} ; retrying in {max_retry_wait:.1f}s...")
@@ -93,20 +96,23 @@ class ForexPriceLoader(ABC):
                     time.sleep(max_retry_wait)
         return False
 
-    def fetch_all_pairs(self, currencies: list[str], days=1000):
+    def fetch_all_pairs(self, currencies: list[str], days=1000, **kwargs):
         """
         fetch every combination of the given currencies
         """
         pairs = make_pairs(currencies)
         for pair in pairs:
+            # TODO[inconsistency]: currently 'days' is not really doing much except for using with Polygon API
             req = make_forex_price_request(pair.ticker, days)
             if self.have_in_cache(req):
                 logger.debug(f"We already have '{req}' ; Skipping")
                 continue
-            for p in (pair, pair.reverse()):
-                if self.fetch_with_retries(p):
-                    break
-                logger.warning(f"No data available for '{p}', perhaps too exotic")
+            if self.fetch_with_retries(req, **kwargs):
+                continue
+            req.pair = req.pair.reverse()
+            if self.fetch_with_retries(req, **kwargs):
+                continue
+            logger.warning(f"No data available for '{req.pair}', perhaps too exotic")
 
 
 class PolygonForex(ForexPriceLoader):

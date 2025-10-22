@@ -25,11 +25,11 @@ def main():
     logging.getLogger("loaders").setLevel(logging.DEBUG)
 
     load_dotenv()
-    avf = AlphaVantageForex(".alpha_vantage_cache", os.getenv("ALPHA_VANTAGE_API_KEY"))
-    # pf = PolygonForex(".polygon_cache", os.getenv("POLYGON_API_KEY"))
-    # yf = YahooForex()
+    loader = AlphaVantageForex(".alpha_vantage_cache", os.getenv("ALPHA_VANTAGE_API_KEY"))
+    # loader = PolygonForex(".polygon_cache", os.getenv("POLYGON_API_KEY"))
+    # loader = YahooForex()
 
-    avf.fetch_all_pairs(MAJOR_CURRENCIES)
+    loader.fetch_all_pairs(MAJOR_CURRENCIES, full=True)
 
 
 if __name__ == "__main__":
