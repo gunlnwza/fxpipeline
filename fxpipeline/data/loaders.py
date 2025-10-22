@@ -1,13 +1,17 @@
 import os
+from io import StringIO
+from abc import ABC, abstractmethod
 import logging
 import requests
-from abc import ABC, abstractmethod
-from io import StringIO
+import datetime
+import time
 
 import pandas as pd
+from urllib3.exceptions import MaxRetryError
 from polygon import RESTClient
 
 from core import ForexPriceRequest, ForexPrice
+from currencies import make_pairs
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +40,51 @@ class ForexPriceLoader(ABC):
         filename = f"{self.path}/{req.pair}.csv"
         df = pd.read_csv(filename, index_col="timestamp", parse_dates=True)
         return ForexPrice(df, req)
+    
+    def have_in_cache(self, req: ForexPriceRequest) -> bool:
+        filename = f"{self.path}/{req.pair}.csv"
+        if os.path.exists(filename):
+            return True
+        return False
+
+    def fetch(self, req: ForexPriceRequest):
+        """
+        pretty much git fetch, download and cache
+        """
+        data = self.download(req)
+        if not data:
+            raise ValueError("Data is None, meaning is has not been downloaded")
+        self.save(data)  # TODO: outer join with old data, (load-join-save)
+
+    def fetch_with_retries(self, req: ForexPriceRequest, retries=5, max_retry_wait=30) -> bool:
+        """
+        attempting to fetch for several times
+        """
+        logger.info(f"Fetching {req.pair}...")
+        for attempt in range(1, retries + 1):
+            try:
+                logger.debug(f"Fetching {req.pair} (attempt {attempt})...")
+                self.fetch(req)
+                return True
+            except MaxRetryError as e:
+                logger.error(f"MaxRetryError: {e} ; retrying in {max_retry_wait:.1f}s...")
+                if attempt < retries:
+                    time.sleep(max_retry_wait)
+        return False
+
+    def fetch_all(self, currencies: list[str]):
+        pairs = make_pairs(currencies)
+        today = datetime.datetime.now()
+        start = today - datetime.timedelta(730)
+        for pair in pairs:
+            req = ForexPriceRequest(pair, start, today)
+            if self.have_in_cache(req):
+                logger.debug(f"We already have '{req}' ; Skipping")
+                continue
+            for p in (pair, pair.reverse()):
+                if self.fetch_with_retries(p):
+                    break
+                logger.warning(f"No data available for '{p}', perhaps too exotic")
 
 
 class PolygonForex(ForexPriceLoader):
@@ -96,12 +145,14 @@ class AlphaVantageForex(ForexPriceLoader):
 
         res = requests.get("https://www.alphavantage.co/query", params, timeout=10)
         if not res.ok:
-            raise requests.exceptions.HTTPError(f"HTTP {res.status_code} — cannot download {req}")
+            logger.error(f"HTTP {res.status_code} — cannot download {req}")
+            return None
 
         content_type = res.headers.get("Content-Type", "")
         if content_type and "json" in content_type.lower():
             msg = res.json()
-            raise APIError(f"Asked for csv, but got json, likely an error message: {msg}")
+            logger.error(f"Asked for csv, but got json, likely an error message: {msg}")
+            return None
 
         df = pd.read_csv(StringIO(res.text), index_col="timestamp", parse_dates=True)
         df = df.sort_index()
