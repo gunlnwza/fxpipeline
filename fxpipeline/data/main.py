@@ -1,6 +1,6 @@
 import os
-import sys
-import signal
+from signal_utils import handle_sigint
+
 import time
 import datetime
 import logging
@@ -9,15 +9,6 @@ from dotenv import load_dotenv
 from urllib3.exceptions import MaxRetryError
 
 from core import ForexPriceRequest, make_pairs, CurrencyPair
-from polygon_data import download_polygon_forex_price, save_polygon_forex_price
-from alpha_vantage_data import download_alpha_vantage_forex_price, save_alpha_vantage_forex_price
-
-logger = logging.getLogger(__name__)
-
-
-def sigint_handler(sig, frame):
-    print()
-    sys.exit(0)
 
 
 def fetch_price(pair: CurrencyPair, api_key: str, path: str):  # TODO: choose strategy at this function
@@ -73,32 +64,13 @@ def fetch_all_pairs(currencies):
             logger.warning(f"No data available for '{pair.ticker}', perhaps too exotic")
 
 
+def main():
+    handle_sigint()
+
+    avf = AlphaVantageForex(".alpha_vantage_cache", )
+    pf = PolygonForex()
+    yf = YahooForex()
+
+
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.StreamHandler()
-        ]
-    )
-
-    for package in ("urllib3", "io", "charset_normalizer", "chardet"):
-        logging.getLogger(package).setLevel(logging.WARNING)
-    
-    logging.getLogger("polygon_data").setLevel(logging.INFO)
-
-
-    signal.signal(signal.SIGINT, sigint_handler)
-
-    load_dotenv()
-    api_key = os.getenv("POLYGON_API_KEY")
-    # path = ".polygon_cache"
-    path = ".alpha_vantage_cache"
-
-    # TODO: would be nice to remember what exotic pairs are not available
-
-    # currencies = ["AUD", "CAD", "EUR", "JPY", "NZD", "NOK", "GBP", "SEK", "CHF", "USD", "THB"]
-    currencies = ["AUD", "EUR", "USD", "JPY", "GBP", "NZD", "CHF"]
-    # currencies = ["AUD", "EUR", "USD"]
-    # currencies = [""]
-    fetch_all_pairs(currencies)
+    main()

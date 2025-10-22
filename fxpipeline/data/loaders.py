@@ -12,10 +12,15 @@ from core import ForexPriceRequest, ForexPrice
 logger = logging.getLogger(__name__)
 
 
+class APIError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
 class ForexPriceLoader(ABC):
-    def __init__(self, api_key: str, path: str):
-        self.api_key = api_key
+    def __init__(self, path: str, api_key: str):
         self.path = path
+        self.api_key = api_key
 
     @abstractmethod
     def download(req: ForexPriceRequest, /) -> ForexPrice:
@@ -34,8 +39,8 @@ class ForexPriceLoader(ABC):
 
 
 class PolygonForex(ForexPriceLoader):
-    def __init__(self, api_key, path):
-        super().__init__(api_key, path)
+    def __init__(self, path, api_key):
+        super().__init__(path, api_key)
 
     def download(self, req: ForexPriceRequest) -> ForexPrice:
         # download
@@ -58,9 +63,9 @@ class PolygonForex(ForexPriceLoader):
         return ForexPrice(df, req)
 
 
-class AlphaVantageForexPriceLoader(ForexPriceLoader):
-    def __init__(self, api_key, path):
-        super().__init__(api_key, path)
+class AlphaVantageForex(ForexPriceLoader):
+    def __init__(self, path, api_key):
+        super().__init__(path, api_key)
 
     def download(self, req: ForexPriceRequest, full=False):
         """
@@ -103,6 +108,6 @@ class AlphaVantageForexPriceLoader(ForexPriceLoader):
         return ForexPrice(df, req)
 
 
-class APIError(Exception):
-    def __init__(self, message):
-        super().__init__(message)
+class YahooForex(ForexPriceLoader):
+    def __init__(self, path):
+        super().__init__(None, path)
