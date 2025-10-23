@@ -70,13 +70,14 @@ class ForexPriceLoader(ABC):
             return True
         return False
 
-    def fetch(self, req: ForexPriceRequest):
+    def fetch(self, req: ForexPriceRequest) -> ForexPrice:
         """
         pretty much git fetch, download and cache
         """
         data = self.download(req)
         if data is None:
-            raise ValueError("data is None, meaning is has not been downloaded")
+            logging.warning("data is None, meaning is has not been downloaded")
+            return None
 
         # TODO[download]: subtract time range and only download the really needed newer portion
         if self.have_in_cache(req):
