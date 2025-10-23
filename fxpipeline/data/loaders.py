@@ -36,6 +36,7 @@ class ForexPriceLoader(ABC):
 
     @abstractmethod
     def download(req: ForexPriceRequest) -> ForexPrice:
+        """connect to the internet and download, can raise APIError"""
         pass
 
     # TODO[database]: delegate to dedicated database store
@@ -76,7 +77,7 @@ class ForexPriceLoader(ABC):
         """
         data = self.download(req)
         if data is None:
-            logging.warning("data is None, meaning is has not been downloaded")
+            logger.warning("data is None, meaning is has not been downloaded")
             return None
 
         # TODO[download]: subtract time range and only download the really needed newer portion
@@ -112,18 +113,21 @@ class ForexPriceLoader(ABC):
         fetch every combination of the given currencies
         """
         pairs = make_pairs(currencies)
-        for pair in pairs:
-            # TODO[inconsistency]: currently 'days' is not really doing much except for using with Polygon API
-            req = make_forex_price_request(pair.ticker, days)
-            if self.have_in_cache(req):  # TODO[data]: need to take into account if we have the requested time range:
-                logger.debug(f"We already have '{req}' ; Skipping")
-                continue
-            if self.fetch_with_retries(req):
-                continue
-            req.pair = req.pair.reverse()
-            if self.fetch_with_retries(req):
-                continue
-            logger.warning(f"No data available for '{req.pair}', perhaps too exotic")
+        try:
+            for pair in pairs:
+                # TODO[inconsistency]: currently 'days' is not really doing much except for using with Polygon API
+                req = make_forex_price_request(pair.ticker, days)
+                if self.have_in_cache(req):  # TODO[data]: need to take into account if we have the requested time range:
+                    logger.debug(f"We already have '{req}' ; Skipping")
+                    continue
+                if self.fetch_with_retries(req):
+                    continue
+                req.pair = req.pair.reverse()
+                if self.fetch_with_retries(req):
+                    continue
+                logger.warning(f"No data available for '{req.pair}', perhaps too exotic")
+        except APIError as e:
+            logger.error(e)
 
     def fetch_pair(self, ticker: str, days=1000):
         self.fetch_all_pairs([ticker[:3], ticker[3:]], days)
@@ -196,8 +200,7 @@ class AlphaVantageForex(ForexPriceLoader):
         content_type = res.headers.get("Content-Type", "")
         if content_type and "json" in content_type.lower():
             msg = res.json()
-            logger.error(f"Asked for csv, but got json, likely an error message: {msg}")
-            return None
+            raise APIError(f"Alpha Vantage API error: {msg}")
 
         df = pd.read_csv(StringIO(res.text), index_col="timestamp", parse_dates=True)
         df = df.sort_index()
