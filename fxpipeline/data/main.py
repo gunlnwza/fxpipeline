@@ -5,14 +5,24 @@ from dotenv import load_dotenv
 
 from signal_utils import handle_sigint
 from currencies import MAJOR_CURRENCIES
-from loaders import PolygonForex, AlphaVantageForex, YahooForex
+from loaders import ForexPriceLoader, PolygonForex, AlphaVantageForex, YahooFinanceForex
 
 logger = logging.getLogger(__name__)
 
 
-def main():
-    handle_sigint()
+load_dotenv()
+LOADERS = {
+    "alpha_vantage": AlphaVantageForex(".alpha_vantage_cache", os.getenv("ALPHA_VANTAGE_API_KEY")),
+    "polygon": PolygonForex(".polygon_cache", os.getenv("POLYGON_API_KEY")),
+    "yahoo_finance": YahooFinanceForex(".yahoo_finance_cache")
+}
+def get_loader(name: str) -> ForexPriceLoader:
+    if name not in LOADERS:
+        raise ValueError(f"{name} is not a supported loader")
+    return LOADERS[name]
 
+
+def config_logging():
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -20,16 +30,17 @@ def main():
             logging.StreamHandler()
         ]
     )
-    for package in ("urllib3", "io", "charset_normalizer", "chardet"):
+    for package in ("urllib3", "io", "charset_normalizer", "chardet", "yfinance"):
         logging.getLogger(package).setLevel(logging.WARNING)
     logging.getLogger("loaders").setLevel(logging.DEBUG)
 
-    load_dotenv()
-    loader = AlphaVantageForex(".alpha_vantage_cache", os.getenv("ALPHA_VANTAGE_API_KEY"))
-    # loader = PolygonForex(".polygon_cache", os.getenv("POLYGON_API_KEY"))
-    # loader = YahooForex()
 
-    loader.fetch_all_pairs(MAJOR_CURRENCIES, full=True)
+def main():
+    handle_sigint()
+    config_logging()
+
+    loader = get_loader("yahoo_finance")
+    loader.fetch_all_pairs(currencies=["EUR", "USD"])
 
 
 if __name__ == "__main__":

@@ -8,9 +8,10 @@ import time
 import pandas as pd
 from urllib3.exceptions import MaxRetryError
 from polygon import RESTClient
+import yfinance as yf
 
 from core import ForexPriceRequest, ForexPrice, make_forex_price_request
-from currencies import make_pairs
+from currencies import make_pairs, CurrencyPair
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ class ForexPriceLoader(ABC):
         pretty much git fetch, download and cache
         """
         data = self.download(req, **kwargs)
-        if not data:
+        if data is None:
             raise ValueError("Data is None, meaning is has not been downloaded")
 
         # TODO[download]: subtract time range and only download the really needed newer portion
@@ -144,7 +145,7 @@ class AlphaVantageForex(ForexPriceLoader):
     def __init__(self, path, api_key):
         super().__init__(path, api_key)
 
-    def download(self, req: ForexPriceRequest, full=False):
+    def download(self, req: ForexPriceRequest, full=False):  # TODO[download's API]: it should infer by itself if it should do 'full' or 'compact' based on the time range
         """
         download price from Alpha Vantage
         return df on success, None on error
@@ -187,6 +188,29 @@ class AlphaVantageForex(ForexPriceLoader):
         return ForexPrice(df, req)
 
 
-class YahooForex(ForexPriceLoader):
+class YahooFinanceForex(ForexPriceLoader):
     def __init__(self, path):
-        super().__init__(None, path)
+        super().__init__(path, None)
+
+    def _convert_to_yf_ticker(self, pair: CurrencyPair):
+        if pair.base == "USD":
+            return f"{pair.quote}=X"
+        elif pair.quote == "USD":
+            return f"{pair.base}=X"
+        
+        # fallback, warning: may error # TODO[fix]: make sure it does not error on download
+        return pair
+
+    def download(self, req: ForexPriceRequest):
+        # download
+        ticker = self._convert_to_yf_ticker(req.pair)
+        df = yf.download(ticker, req.start, req.end)
+
+        # clean
+        df.columns = df.columns.droplevel("Ticker")
+        df.rename(columns={
+            "Open": "open", "High": "high", "Low": "low",
+            "Close": "close", "Volume": "volume"}, inplace=True)
+        df.index.name = "timestamp"
+
+        return ForexPrice(df, req)
