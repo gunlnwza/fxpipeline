@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 import logging
 import requests
 import time
+import warnings
+import random
 
 import pandas as pd
 from urllib3.exceptions import MaxRetryError
@@ -68,7 +70,7 @@ class ForexPriceLoader(ABC):
         """
         data = self.download(req, **kwargs)
         if data is None:
-            raise ValueError("Data is None, meaning is has not been downloaded")
+            raise ValueError("data is None, meaning is has not been downloaded")
 
         # TODO[download]: subtract time range and only download the really needed newer portion
         if self.have_in_cache(req):
@@ -90,6 +92,7 @@ class ForexPriceLoader(ABC):
             try:
                 logger.debug(f"Fetching {req.pair} (attempt {attempt})...")
                 self.fetch(req, **kwargs)
+                time.sleep(random.randint(1, 3))
                 return True
             except MaxRetryError as e:
                 logger.error(f"MaxRetryError: {e} ; retrying in {max_retry_wait:.1f}s...")
@@ -105,7 +108,7 @@ class ForexPriceLoader(ABC):
         for pair in pairs:
             # TODO[inconsistency]: currently 'days' is not really doing much except for using with Polygon API
             req = make_forex_price_request(pair.ticker, days)
-            if self.have_in_cache(req):
+            if self.have_in_cache(req):  # TODO[data]: need to take into account if we have the requested time range:
                 logger.debug(f"We already have '{req}' ; Skipping")
                 continue
             if self.fetch_with_retries(req, **kwargs):
@@ -192,19 +195,19 @@ class YahooFinanceForex(ForexPriceLoader):
     def __init__(self, path):
         super().__init__(path, None)
 
-    def _convert_to_yf_ticker(self, pair: CurrencyPair):
+    def _convert_to_yf_ticker(self, pair: CurrencyPair) -> str:
         if pair.base == "USD":
             return f"{pair.quote}=X"
         elif pair.quote == "USD":
             return f"{pair.base}=X"
-        
-        # fallback, warning: may error # TODO[fix]: make sure it does not error on download
-        return pair
+        return f"{pair.ticker}=X"
 
-    def download(self, req: ForexPriceRequest):
+    def download(self, req: ForexPriceRequest) -> ForexPrice:
         # download
         ticker = self._convert_to_yf_ticker(req.pair)
-        df = yf.download(ticker, req.start, req.end)
+        warnings.filterwarnings("ignore")
+        df = yf.download(ticker, req.start, req.end, progress=False)
+        warnings.filterwarnings("default")
 
         # clean
         df.columns = df.columns.droplevel("Ticker")

@@ -4,7 +4,7 @@ import logging
 from dotenv import load_dotenv 
 
 from signal_utils import handle_sigint
-from currencies import MAJOR_CURRENCIES
+from currencies import MAJOR_CURRENCIES, G10_CURRENCIES, EXOTIC_CURRENCIES, EMERGING_MARKET_CURRENCIES
 from loaders import ForexPriceLoader, PolygonForex, AlphaVantageForex, YahooFinanceForex
 
 logger = logging.getLogger(__name__)
@@ -25,14 +25,19 @@ def get_loader(name: str) -> ForexPriceLoader:
 def config_logging():
     logging.basicConfig(
         level=logging.DEBUG,
-        format="%(asctime)s [%(levelname)s] %(message)s",
+        format="%(asctime)s [%(levelname)s] %(module)s: %(message)s",
         handlers=[
             logging.StreamHandler()
         ]
     )
-    for package in ("urllib3", "io", "charset_normalizer", "chardet", "yfinance"):
-        logging.getLogger(package).setLevel(logging.WARNING)
-    logging.getLogger("loaders").setLevel(logging.DEBUG)
+
+    logging_levels = {
+        logging.INFO: ("yfinance", "peewee"),
+        logging.DEBUG: ("loaders",),
+    }
+    for level, packages in logging_levels.items():
+        for p in packages:
+            logging.getLogger(p).setLevel(level)
 
 
 def main():
@@ -40,7 +45,7 @@ def main():
     config_logging()
 
     loader = get_loader("yahoo_finance")
-    loader.fetch_all_pairs(currencies=["EUR", "USD"])
+    loader.fetch_all_pairs(currencies=MAJOR_CURRENCIES)
 
 
 if __name__ == "__main__":
