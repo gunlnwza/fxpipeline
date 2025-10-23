@@ -12,7 +12,7 @@ from urllib3.exceptions import MaxRetryError
 from polygon import RESTClient
 import yfinance as yf
 
-from core import ForexPriceRequest, ForexPrice, make_forex_price_request
+from forex_price import ForexPriceRequest, ForexPrice, make_forex_price_request
 from currencies import make_pairs, CurrencyPair
 
 logger = logging.getLogger(__name__)

@@ -44,7 +44,7 @@ def main():
     handle_sigint()
     config_logging()
 
-    loader = get_loader("yahoo_finance")
+    loader = get_loader("polygon")
     loader.fetch_all_pairs(currencies=MAJOR_CURRENCIES)
 
 
