@@ -1,16 +1,22 @@
 import os
 from io import StringIO
-from abc import ABC, abstractmethod
-import logging
-import requests
-import time
-import warnings
-import random
 
+from abc import ABC, abstractmethod
+
+import logging
+import warnings
+
+import time
+import datetime
+
+import random
+import numpy as np
 import pandas as pd
+
+import requests
+import yfinance as yf
 from urllib3.exceptions import MaxRetryError
 from polygon import RESTClient
-import yfinance as yf
 
 from forex_price import ForexPriceRequest, ForexPrice, make_forex_price_request
 from currencies import make_pairs, CurrencyPair
@@ -29,7 +35,7 @@ class ForexPriceLoader(ABC):
         self.api_key = api_key
 
     @abstractmethod
-    def download(req: ForexPriceRequest, **kwargs) -> ForexPrice:
+    def download(req: ForexPriceRequest) -> ForexPrice:
         pass
 
     # TODO[database]: delegate to dedicated database store
@@ -64,11 +70,11 @@ class ForexPriceLoader(ABC):
             return True
         return False
 
-    def fetch(self, req: ForexPriceRequest, **kwargs):
+    def fetch(self, req: ForexPriceRequest):
         """
         pretty much git fetch, download and cache
         """
-        data = self.download(req, **kwargs)
+        data = self.download(req)
         if data is None:
             raise ValueError("data is None, meaning is has not been downloaded")
 
@@ -83,7 +89,7 @@ class ForexPriceLoader(ABC):
 
         return data
 
-    def fetch_with_retries(self, req: ForexPriceRequest, retries=5, max_retry_wait=30, **kwargs) -> bool:
+    def fetch_with_retries(self, req: ForexPriceRequest, retries=5, max_retry_wait=30) -> bool:
         """
         attempting to fetch for several times
         """
@@ -91,7 +97,7 @@ class ForexPriceLoader(ABC):
         for attempt in range(1, retries + 1):
             try:
                 logger.debug(f"Fetching {req.pair} (attempt {attempt})...")
-                self.fetch(req, **kwargs)
+                self.fetch(req)
                 time.sleep(random.randint(1, 3))
                 return True
             except MaxRetryError as e:
@@ -100,7 +106,7 @@ class ForexPriceLoader(ABC):
                     time.sleep(max_retry_wait)
         return False
 
-    def fetch_all_pairs(self, currencies: list[str], days=1000, **kwargs):
+    def fetch_all_pairs(self, currencies: list[str], days=1000):
         """
         fetch every combination of the given currencies
         """
@@ -111,12 +117,15 @@ class ForexPriceLoader(ABC):
             if self.have_in_cache(req):  # TODO[data]: need to take into account if we have the requested time range:
                 logger.debug(f"We already have '{req}' ; Skipping")
                 continue
-            if self.fetch_with_retries(req, **kwargs):
+            if self.fetch_with_retries(req):
                 continue
             req.pair = req.pair.reverse()
-            if self.fetch_with_retries(req, **kwargs):
+            if self.fetch_with_retries(req):
                 continue
             logger.warning(f"No data available for '{req.pair}', perhaps too exotic")
+
+    def fetch_pair(self, ticker: str, days=1000):
+        self.fetch_all_pairs([ticker[:3], ticker[3:]], days)
 
 
 class PolygonForex(ForexPriceLoader):
@@ -148,7 +157,7 @@ class AlphaVantageForex(ForexPriceLoader):
     def __init__(self, path, api_key):
         super().__init__(path, api_key)
 
-    def download(self, req: ForexPriceRequest, full=False):  # TODO[download's API]: it should infer by itself if it should do 'full' or 'compact' based on the time range
+    def download(self, req: ForexPriceRequest):
         """
         download price from Alpha Vantage
         return df on success, None on error
@@ -166,13 +175,16 @@ class AlphaVantageForex(ForexPriceLoader):
 
         NOTE: 4H is not supported by the API
         """
+        # logger.debug(req.__repr__)
+        business_day = np.busday_count(req.start.date(), req.end.date() + datetime.timedelta(1))
+        download_full = business_day >= 100
         params = {
             "apikey": self.api_key,
             "from_symbol": req.pair.base,
             "to_symbol": req.pair.quote,
             "function": "FX_DAILY",
             "datatype": "csv",
-            "outputsize": "full" if full else "compact"
+            "outputsize": "full" if download_full else "compact"
         }
 
         res = requests.get("https://www.alphavantage.co/query", params, timeout=10)
