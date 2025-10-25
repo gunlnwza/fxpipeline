@@ -1,5 +1,6 @@
 # Development Log
 
+
 ## 📅 2025-10-20 — Polygon Forex Data Sketch
 
 ### ✅ What I did
@@ -21,3 +22,18 @@
 ### 💭 Side notes
 - One Pomodoro >> 3 months of wandering.
 - This is the start of the "Stable Data Feeder" arc.
+
+
+## 2025-10-25 - Light Review
+
+### What I reviewed
+- Pandas Data Reader is not the best choice, I should probably write my own MacroDataLoader
+- Should nuke the old v3 folder
+
+
+---
+
+## Ideas
+
+- Kalman filiter as MA, its Std. as Band
+- Maybe make Indicator class
