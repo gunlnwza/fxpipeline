@@ -6,6 +6,8 @@ if TYPE_CHECKING:
     from .price import PricePoint
 
 
+# TODO: implement lot size and pips math
+
 class Order:
     def __init__(self, type_: str, point: PricePoint):
         self.type = type_

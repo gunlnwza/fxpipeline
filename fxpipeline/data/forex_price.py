@@ -11,6 +11,8 @@ class ForexPriceRequest:
     pair: CurrencyPair
     start: datetime.datetime
     end: datetime.datetime
+    tf_length: int = 1
+    tf_unit: str = "day"  # minute, day, week, month
 
     def __str__(self) -> str:
         start = self.start.strftime("%Y-%m-%d %H:%M:%S")
