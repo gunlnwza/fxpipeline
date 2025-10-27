@@ -1,7 +1,7 @@
 import logging
 
-from signal_utils import handle_sigint
-from fxpipeline.data.currency import G10_CURRENCIES
+from ..utils import handle_sigint
+from currency import G10_CURRENCIES
 from database import get_loader
 
 logger = logging.getLogger(__name__)

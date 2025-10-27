@@ -19,7 +19,7 @@ from urllib3.exceptions import MaxRetryError
 from polygon import RESTClient
 
 from forex_price import ForexPriceRequest, ForexPrice, make_forex_price_request
-from fxpipeline.data.currency import make_pairs, CurrencyPair
+from currency_pair import make_pairs, CurrencyPair
 
 logger = logging.getLogger(__name__)
 
