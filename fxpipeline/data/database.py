@@ -1,8 +1,10 @@
 import os
+from typing import TYPE_CHECKING
 
+import pandas as pd
 from dotenv import load_dotenv 
 
-from loaders import ForexPriceLoader, PolygonForex, AlphaVantageForex, YahooFinanceForex
+from .loaders import ForexPriceLoader, PolygonForex, AlphaVantageForex, YahooFinanceForex
 
 
 class Database:
@@ -28,10 +30,14 @@ def get_loader(source: str = "yahoo_finance") -> ForexPriceLoader:
     return LOADERS[source]
 
 
-def load_price(ticker: str, source: str = "alpha_vantage"):
+def load_forex_price(ticker: str, source: str = "alpha_vantage") -> pd.DataFrame:
     """
     Load existing price from cache 
     """
-
     loader = get_loader(source)
-    loader.load_every_row(ticker)
+    try:
+        df = loader.load_every_row(ticker)
+        return df
+    except FileNotFoundError as e:
+        print("Error:", e)
+        return None

@@ -3,7 +3,7 @@ import datetime
 
 import pandas as pd
 
-from currency_pair import CurrencyPair
+from .currency_pair import CurrencyPair
 
 
 @dataclass
