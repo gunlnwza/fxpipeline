@@ -1,25 +1,10 @@
-import os
 import logging
 
-from dotenv import load_dotenv 
-
 from signal_utils import handle_sigint
-from currencies import MAJOR_CURRENCIES, G10_CURRENCIES, EXOTIC_CURRENCIES, EMERGING_MARKET_CURRENCIES
-from loaders import ForexPriceLoader, PolygonForex, AlphaVantageForex, YahooFinanceForex
+from fxpipeline.data.currency import G10_CURRENCIES
+from database import get_loader
 
 logger = logging.getLogger(__name__)
-
-
-load_dotenv()
-LOADERS = {
-    "alpha_vantage": AlphaVantageForex(".alpha_vantage_cache", os.getenv("ALPHA_VANTAGE_API_KEY")),
-    "polygon": PolygonForex(".polygon_cache", os.getenv("POLYGON_API_KEY")),
-    "yahoo_finance": YahooFinanceForex(".yahoo_finance_cache")
-}
-def get_loader(name: str) -> ForexPriceLoader:
-    if name not in LOADERS:
-        raise ValueError(f"{name} is not a supported loader")
-    return LOADERS[name]
 
 
 def config_logging():
