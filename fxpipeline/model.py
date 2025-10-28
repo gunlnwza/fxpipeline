@@ -22,32 +22,44 @@ class Model:
         self._model.fit(X_train, y_train)
         self._trained = True
         joblib.dump(self._model, self._filename)
+        print(f"Save model to '{self._filename}'")
 
     def predict(self, X):
         y_pred = self._model.predict(X)
         return y_pred
 
 
-def preprocess(closes: pd.DataFrame, n=100):
+def preprocess(closes: pd.Series, n=50):
     """
-    take in df with 'close', make rows of z's, mean, std
+    Take in serie of 'closes' prices, make rows of z's, mean, std
     """
-    close_names = [f"close-{i}" for i in range(n)]
+    def get_name(prefix: str, i: int) -> str:
+        """
+        + if future, - if already seen; Filtration, Yay!
+        """
+        if i < 0:
+            return f"{prefix}+{abs(i)}"
+        else:
+            return f"{prefix}-{i}"
 
-    prices = closes.copy()
-    for i in range(n):
-        prices[f"close-{i}"] = prices['close'].shift(i)
-    prices["close+1"] = prices['close'].shift(-1)
+    close_series = []
+    for i in range(-1, n):
+        s = closes.shift(i)
+        s = s.rename(get_name("close", i))
+        close_series.append(s)
+    close_df = pd.concat(close_series, axis=1)
+    close_df.dropna(inplace=True)
 
-    prices["mean"] = prices[close_names].mean(axis=1)
-    prices["std"] = prices[close_names].std(axis=1)
-    for i in range(n):
-        prices[f"z-{i}"] = (prices[f"close-{i}"] - prices["mean"]) / prices["std"]
-    prices[f"z+1"] = (prices[f"close+1"] - prices["mean"]) / prices["std"]
+    z_series = []
+    mean = close_df.mean(axis=1).rename("mean")
+    std = close_df.std(axis=1).rename("std")
+    for i in range(-1, n):
+        s = (close_df[get_name("close", i)] - mean) / std
+        s = s.rename(get_name("z", i))
+        z_series.append(s)
 
-    prices.dropna(inplace=True)
-
-    return prices
+    res = pd.concat(z_series + [mean, std], axis=1)
+    return res
 
 
 def evaluate_performance(y_test, y_pred):
@@ -78,10 +90,17 @@ if __name__ == "__main__":
 
     from utils import Stopwatch
 
-    df = pd.read_csv("data/.alpha_vantage_cache/USDJPY.csv")  # TODO[Loading]: loading is too low level, I want it polished and posh
+    # NOTE: What if we predict Low and High, and let the model do the buy-low-sell-high strategy?
+    # Would need two timeframes, big and small
+    # - predict bounds on big timeframe
+    # - then execute trades with precision in small timeframe
+    # Actually, this match how retail traders trade, they look at H1, or H4, then go in with M15.
+    # Some people use H4 and go in H1, or use D1, go in H1.
+
+    df = pd.read_csv("data/.alpha_vantage_cache/EURUSD.csv")  # TODO[Loading]: loading is too low level, I want it polished and posh
 
     n = 100
-    prices = preprocess(df[["close"]], n)
+    prices = preprocess(df["close"], n)
     z_names = [f"z-{i}" for i in range(n)]
     X = np.array(prices[z_names + ["mean", "std"]])
     y = np.array(prices["z+1"])
@@ -101,11 +120,13 @@ if __name__ == "__main__":
         if not model._trained:
             print("Training on train portion...")
             model.fit(X_train, y_train)
+            print()
+
         y_pred = model.predict(X_test)
         print("Evaluating on test portion...")
         evaluate_performance(y_test, y_pred)
+        print()
 
         sw.stop()
-        print()
         print(f"Time elapse: {sw.time:.3f}s")
         print("-" * 80)
