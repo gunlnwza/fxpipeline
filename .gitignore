@@ -42,6 +42,7 @@ test_cache/
 *.h5
 *.feather
 *.parquet
+*.joblib
 
 # =====================================
 # Output Files
