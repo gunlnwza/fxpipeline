@@ -77,7 +77,7 @@ class ForexPriceLoader(ABC):
         """
         data = self.download(req)
         if data is None:
-            logger.warning("data is None, meaning is has not been downloaded")
+            logger.warning("data is None, meaning it has not been downloaded")
             return None
 
         # TODO[download]: subtract time range and only download the really needed newer portion
@@ -180,7 +180,6 @@ class AlphaVantageForex(ForexPriceLoader):
 
         NOTE: 4H is not supported by the API
         """
-        # logger.debug(req.__repr__)
         business_day = np.busday_count(req.start.date(), req.end.date() + datetime.timedelta(1))
         download_full = business_day >= 100
         params = {
@@ -191,6 +190,7 @@ class AlphaVantageForex(ForexPriceLoader):
             "datatype": "csv",
             "outputsize": "full" if download_full else "compact"
         }
+        logger.debug("Alpha Vantage, downloading with option: " + params["outputsize"])
 
         res = requests.get("https://www.alphavantage.co/query", params, timeout=10)
         if not res.ok:

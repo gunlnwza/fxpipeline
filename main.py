@@ -1,52 +1,46 @@
-import pprint
+import logging
+import datetime
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+from fxpipeline.data import load_forex_price, get_loader
 
-from fxpipeline.strategy import RandomAction
-from fxpipeline.backtest import Account, Simulation
+from fxpipeline.data.forex_price import ForexPriceRequest
+from fxpipeline.data.currency_pair import CurrencyPair
+
+from fxpipeline.utils import handle_sigint
+
+logger = logging.getLogger(__name__)
 
 
-def plot_base():
-    plt.title("Backtest Result")
-    plt.xlabel("Index")
-    plt.ylabel("Price")
+def config_logging():
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        handlers=[
+            logging.StreamHandler()
+        ]
+    )
 
-def plot_price(arr):
-    plt.plot(arr)
+    logging_levels = {
+        logging.DEBUG: ("loaders",),
+        logging.INFO: ("yfinance", "peewee", "urllib3", "charset_normalizer"),
+        logging.WARNING: ("requests",),
+        logging.ERROR: ()
+    }
+    for level, packages in logging_levels.items():
+        for p in packages:
+            logging.getLogger(p).setLevel(level)
 
-def plot_order(orders: list):
-    for order in orders:
-        plt.plot(order[:2], order[-2:], color="green", lw=2, ls="--", ms=5, marker="o",)
+
+def main():
+    handle_sigint()
+    config_logging()
+
+    # l = get_loader("alpha_vantage")
+    # l.fetch(ForexPriceRequest(CurrencyPair("USDTHB"), datetime.datetime(2025, 10, 10), datetime.datetime(2025, 10, 30)))
+
+    df = load_forex_price("USDTHB")
+    print(df)
 
 
 if __name__ == "__main__":
-    # np.random.seed(42)
-
-    n = 1000
-    drift = 1
-    vol = 0.8
-
-    # Random walk drift (looks like sideway forex price)
-    # arr = np.full(n, 42) + np.random.normal(drift, vol, n).cumsum()
-    
-    # GBM (looks just like actual forex price)
-    T = 1
-    time_step = T / n
-    dt = np.full(n, time_step).cumsum()
-    dW_t = np.random.normal(0, np.sqrt(time_step), n).cumsum()
-    arr = 42 * np.exp((drift - vol**2 / 2) * dt + vol * dW_t)
-
-    df = pd.DataFrame(arr)
-    strategy = RandomAction()
-    account = Account(100)
-
-    simulation = Simulation(df, strategy, account)
-    simulation.run()
-    pprint.pprint(simulation.summary)
-
-    plot_base()
-    plot_price(arr)
-    plot_order(simulation.summary["account"]["orders"])
-    plt.show()
+    main()
