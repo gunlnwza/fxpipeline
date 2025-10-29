@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
     from .account import Account
     
-    from ..strategy import Strategy
+    from .strategy import Strategy
 
 
 class Simulation:
