@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 import yfinance as yf
 
-from .base import ForexPriceLoader
-from ..core import CurrencyPair, ForexPriceRequest
+from .base import ForexPriceLoader, ForexPriceRequest
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -17,9 +16,6 @@ logger = logging.getLogger(__name__)
 class YahooFinanceForex(ForexPriceLoader):
     def __init__(self, path):
         super().__init__(path, None)
-
-    def _convert_to_yf_ticker(self, pair: CurrencyPair) -> str:
-        return f"{pair.ticker}=X"
 
     def download(self, req: ForexPriceRequest) -> pd.DataFrame:
         # download

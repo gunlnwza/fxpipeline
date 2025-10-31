@@ -5,9 +5,9 @@ import datetime
 import pandas as pd
 from urllib3.exceptions import MaxRetryError
 
-from .core import ForexPriceRequest, CurrencyPair
 from .loaders import get_loader
 from .database import get_database
+from ..core import ForexPriceRequest, CurrencyPair
 
 """Fetch functions: fetching smartly and respectfully."""
 

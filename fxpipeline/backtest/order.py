@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from .price import PricePoint
-    from ..data.core import CurrencyPair
+    from ..core import CurrencyPair
 
 
 class Order:

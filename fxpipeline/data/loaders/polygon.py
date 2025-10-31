@@ -3,8 +3,7 @@ import pandas as pd
 
 from polygon import RESTClient
 
-from .base import ForexPriceLoader
-from ..core import ForexPriceRequest
+from .base import ForexPriceLoader, ForexPriceRequest
 
 logger = logging.getLogger(__name__)
 

@@ -6,8 +6,7 @@ import requests
 import numpy as np
 import pandas as pd
 
-from .base import ForexPriceLoader, APIError
-from ..core import ForexPriceRequest
+from .base import ForexPriceLoader, APIError, ForexPriceRequest
 
 logger = logging.getLogger(__name__)
 
