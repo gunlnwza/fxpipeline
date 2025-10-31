@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from .base import Strategy
-
 if TYPE_CHECKING:
     from ..backtest import Account, TimeHorizonDataFrame
+
+
+class Strategy(ABC):
+    @abstractmethod
+    def act(self, account: Account, data: TimeHorizonDataFrame):  # TODO[architecure]: make act() signature good
+        pass
 
 
 class RandomAction(Strategy):
