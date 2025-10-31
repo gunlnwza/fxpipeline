@@ -6,8 +6,8 @@ import requests
 import numpy as np
 import pandas as pd
 
-from .base import ForexPriceLoader
-from ..core import ForexPriceRequest, ForexPrice
+from .base import ForexPriceLoader, APIError
+from ..core import ForexPriceRequest
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ class AlphaVantageForex(ForexPriceLoader):
     def __init__(self, path, api_key):
         super().__init__(path, api_key)
 
-    def download(self, req: ForexPriceRequest):
+    def download(self, req: ForexPriceRequest) -> pd.DataFrame:
         """
         download price from Alpha Vantage
         return df on success, None on error
@@ -58,4 +58,4 @@ class AlphaVantageForex(ForexPriceLoader):
 
         df = pd.read_csv(StringIO(res.text), index_col="timestamp", parse_dates=True)
         df = df.sort_index()
-        return ForexPrice(df, req)
+        return df

@@ -1,10 +1,14 @@
 import logging
 import warnings
+from typing import TYPE_CHECKING
 
 import yfinance as yf
 
 from .base import ForexPriceLoader
 from ..core import CurrencyPair, ForexPriceRequest, ForexPrice
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +26,7 @@ class YahooFinanceForex(ForexPriceLoader):
 
         return f"{pair.ticker}=X"
 
-    def download(self, req: ForexPriceRequest) -> ForexPrice:
+    def download(self, req: ForexPriceRequest) -> pd.DataFrame:
         # download
         ticker = self._convert_to_yf_ticker(req.pair)
         # warnings.filterwarnings("ignore")
@@ -36,4 +40,4 @@ class YahooFinanceForex(ForexPriceLoader):
             "Close": "close", "Volume": "volume"}, inplace=True)
         df.index.name = "timestamp"
 
-        return ForexPrice(df, req)
+        return df

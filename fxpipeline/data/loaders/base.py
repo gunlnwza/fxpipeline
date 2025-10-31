@@ -23,7 +23,7 @@ class ForexPriceLoader(ABC):
         self.api_key = api_key
 
     @abstractmethod
-    def download(req: ForexPriceRequest) -> ForexPrice:  # TODO[refactor]: change to just df
+    def download(req: ForexPriceRequest) -> pd.DataFrame:
         """connect to the internet and download, can raise APIError"""
         pass
 

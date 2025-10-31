@@ -4,7 +4,7 @@ import pandas as pd
 from polygon import RESTClient
 
 from .base import ForexPriceLoader
-from ..core import ForexPriceRequest, ForexPrice
+from ..core import ForexPriceRequest
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class PolygonForex(ForexPriceLoader):
     def __init__(self, path, api_key):
         super().__init__(path, api_key)
 
-    def download(self, req: ForexPriceRequest) -> ForexPrice:
+    def download(self, req: ForexPriceRequest) -> pd.DataFrame:
         # download
         aggs = []
         client = RESTClient(self.api_key)
@@ -31,4 +31,4 @@ class PolygonForex(ForexPriceLoader):
         for name in ("timestamp", "transactions", "otc"):
             df.drop(name, axis=1, inplace=True)
 
-        return ForexPrice(df, req)
+        return df
