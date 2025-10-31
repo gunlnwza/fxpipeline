@@ -71,6 +71,7 @@ class CurrencyPair:
 
     def __init__(self, *args: str | list[str], enforce_priority=True):
         if len(args) == 1:
+            assert len(args[0]) == 6, "invalid ticker string"
             cur_1, cur_2 = args[0][:3], args[0][3:]
         elif len(args) == 2:
             cur_1, cur_2 = args
@@ -116,6 +117,10 @@ class ForexPriceRequest:
     tf_length: int = 1
     tf_unit: str = "day"  # minute, day, week, month
 
+    @property
+    def ticker(self):
+        return self.pair.ticker
+
     def __str__(self) -> str:
         start = self.start.strftime("%Y-%m-%d %H:%M:%S")
         end = self.end.strftime("%Y-%m-%d %H:%M:%S")
@@ -123,7 +128,7 @@ class ForexPriceRequest:
     
     def copy(self) -> "ForexPriceRequest":
         return ForexPriceRequest(self.pair, self.start, self.end)
-
+    
 
 def make_forex_price_request(ticker: str, days=365) -> ForexPriceRequest:
     today = datetime.datetime.now()

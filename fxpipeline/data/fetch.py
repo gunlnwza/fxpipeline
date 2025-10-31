@@ -1,49 +1,62 @@
-import os
-from pathlib import Path
+import logging
+import time
+import datetime
 
-from dotenv import load_dotenv
+import pandas as pd
+from urllib3.exceptions import MaxRetryError
 
-from .core import ForexPriceRequest
-from .loaders import ForexPriceLoader, PolygonForex, AlphaVantageForex, YahooFinanceForex
+from .core import ForexPriceRequest, CurrencyPair
+from .loaders import get_loader
+from .database import get_database
 
 """Fetch functions: fetching smartly and respectfully."""
 
-load_dotenv()
-print(Path(__file__).parent)
-CACHES_PATH = Path(__file__).parent.absolute()
-LOADERS = {
-    "alpha_vantage": AlphaVantageForex(
-        f"{CACHES_PATH}/.alpha_vantage_cache",
-        os.getenv("ALPHA_VANTAGE_API_KEY")
-    ),
-    "polygon": PolygonForex(
-        f"{CACHES_PATH}/.polygon_cache",
-        os.getenv("POLYGON_API_KEY")
-    ),
-    "yahoo_finance": YahooFinanceForex(
-        f"{CACHES_PATH}/.yahoo_finance_cache"
-    )
-}
+logger = logging.getLogger(__name__)
 
 
-def get_loader(source: str = "yahoo_finance") -> ForexPriceLoader:
-    """Factory method for loaders"""
-    if source not in LOADERS:
-        raise ValueError(f"{source} is not a supported loader")
-    return LOADERS[source]
-
-
-def _fetch(req: ForexPriceRequest, source: str):
-    """
-    Fetch one time.
-    """
+def _fetch(req: ForexPriceRequest, source: str) -> bool:
+    """Fetch one time. Updating the cache"""
     loader = get_loader(source)
-    loader.download(req)
+    database = get_database(source)
+
+    # TODO[download]: inspect time range before concluding that we need to load from cache
+    if database.have(req):
+        logger.info(f"Requested data ({req}) is up to date.")
+        return True
+
+    df = loader.download(req)
+    if df is None:
+        logger.warning(f"Data ({req}) is not downloaded.")
+        return False
+
+    # TODO[download]: subtract time range and only download the really needed newer portion
+    if database.have(req):
+        old_df = database.load(req.pair.ticker)
+        df = pd.concat([old_df, df], ignore_index=False)
+        df = df[~df.index.duplicated(keep="last")]
+ 
+    database.save(df, req.pair.ticker)
+    return True
 
 
-def fetch_forex_price(req: ForexPriceRequest, source: str):
-    """
-    Fetch several times, return nothing if no data is downloaded
-    """
-    for i in range(3):
-        _fetch(req, source)
+def _fetch_with_retries(req: ForexPriceRequest, source: str, retries=5, max_retry_wait=30) -> bool:
+    """Fetch several times, update nothing if no data is downloaded"""
+    logger.info(f"Fetching {req.pair}...")
+    for i in range(1, retries + 1):
+        try:
+            logger.debug(f"Fetching {req.pair} (attempt {i})...")
+            _fetch(req, source)
+            return True
+        except MaxRetryError as e:
+            logger.error(f"MaxRetryError: {e} ; retrying in {max_retry_wait:.1f}s...")
+            if i == retries:
+                break
+            time.sleep(max_retry_wait)
+    return False
+
+
+def fetch_forex_price(ticker: str, source: str, days=100):
+    now = datetime.datetime.now()
+    start = now - datetime.timedelta(days)
+    req = ForexPriceRequest(CurrencyPair(ticker), start, now)
+    _fetch_with_retries(req, source)
