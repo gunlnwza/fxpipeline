@@ -17,6 +17,45 @@ class APIError(Exception):
         super().__init__(message)
 
 
+class ForexPriceDatabase(ABC):
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def save(self, df: pd.DataFrame, *args):
+        pass
+
+    @abstractmethod
+    def load(self, *args) -> pd.DataFrame:
+        pass
+
+    @abstractmethod
+    def have(self, *args) -> bool:
+        """Return True if there is the wanted data in cache"""
+
+
+class CSVCache(ForexPriceDatabase):
+    def __init__(self, path: str):
+        super().__init__()
+        self.path = path
+
+    def save(self, df: pd.DataFrame, ticker: str):
+        os.makedirs(self.path, exist_ok=True)
+        filename = f"{self.path}/{ticker}.csv"
+        df.to_csv(filename)
+        logger.info(f"Save data to '{filename}'")
+
+    def load(self, ticker: str) -> pd.DataFrame:
+        filename = f"{self.path}/{ticker}.csv"
+        return pd.read_csv(filename, index_col="timestamp", parse_dates=True)
+    
+    def have_in_cache(self, req: ForexPriceRequest) -> bool:  # TODO[implementation]
+        filename = f"{self.path}/{req.pair}.csv"
+        if os.path.exists(filename):
+            return True
+        return False
+
+
 class ForexPriceLoader(ABC):
     def __init__(self, path: str, api_key: str):
         self.path = path
@@ -24,40 +63,8 @@ class ForexPriceLoader(ABC):
 
     @abstractmethod
     def download(req: ForexPriceRequest) -> pd.DataFrame:
-        """connect to the internet and download, can raise APIError"""
+        """Download forex data from internet, can raise APIError"""
         pass
-
-    # TODO[database]: delegate to dedicated database store
-    def save(self, data: ForexPrice):
-        self._save(data.df, data.req.pair.ticker)
-
-    # TODO[refactor]: lol, I just want easy interface,
-    # but it's getting spaghetti now, but this one resemble pandas's though
-    def _save(self, df: pd.DataFrame, ticker: str):
-        os.makedirs(self.path, exist_ok=True)
-        filename = f"{self.path}/{ticker}.csv"
-        df.to_csv(filename)
-        logger.info(f"Save data to '{filename}'")
-
-    def load_every_row(self, ticker: str) -> pd.DataFrame:
-        """
-        load the entire time range of the ticker
-        """
-        filename = f"{self.path}/{ticker}.csv"
-        return pd.read_csv(filename, index_col="timestamp", parse_dates=True)
-
-    def load(self, req: ForexPriceRequest) -> ForexPrice:
-        """
-        load, and give only the slice of requested time range
-        """
-        df = self.load_every_row(req.pair.ticker)
-        return ForexPrice(df[(req.start <= df.index) & (df.index <= req.end)], req)
-
-    def have_in_cache(self, req: ForexPriceRequest) -> bool:
-        filename = f"{self.path}/{req.pair}.csv"
-        if os.path.exists(filename):
-            return True
-        return False
 
     def fetch(self, req: ForexPriceRequest) -> ForexPrice:
         """
