@@ -14,15 +14,16 @@ from .database import get_database
 logger = logging.getLogger(__name__)
 
 
+# TODO[download]: if the behavior were really like git's, it should not care about start and end dates
 def _fetch(req: ForexPriceRequest, source: str) -> bool:
     """Fetch one time. Updating the cache"""
     loader = get_loader(source)
     database = get_database(source)
 
     # TODO[download]: inspect time range before concluding that we need to load from cache
-    if database.have(req):
-        logger.info(f"Requested data ({req}) is up to date.")
-        return True
+    # if database.have(req):
+    #     logger.info(f"Requested data ({req}) is up to date.")
+    #     return True
 
     df = loader.download(req)
     if df is None:
@@ -34,6 +35,7 @@ def _fetch(req: ForexPriceRequest, source: str) -> bool:
         old_df = database.load(req.pair.ticker)
         df = pd.concat([old_df, df], ignore_index=False)
         df = df[~df.index.duplicated(keep="last")]
+        logger.info(f"Update data for '{req}'")
  
     database.save(df, req.pair.ticker)
     return True
@@ -55,7 +57,7 @@ def _fetch_with_retries(req: ForexPriceRequest, source: str, retries=5, max_retr
     return False
 
 
-def fetch_forex_price(ticker: str, source: str, days=100):
+def fetch_forex_price(ticker: str, source: str = "alpha_vantage", days=100):
     now = datetime.datetime.now()
     start = now - datetime.timedelta(days)
     req = ForexPriceRequest(CurrencyPair(ticker), start, now)

@@ -96,7 +96,7 @@ class CurrencyPair:
         return self.base + self.quote
 
     def reverse(self):
-        return CurrencyPair(self.quote, self.base, enforce_priority=False)
+        self.base, self.quote = self.quote, self.base
 
     def __repr__(self):
         return f"CurrencyPair({self.base}, {self.quote})"

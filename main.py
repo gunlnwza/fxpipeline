@@ -1,6 +1,6 @@
 import logging
 
-from fxpipeline.data import load_forex_price, get_loader
+from fxpipeline.data import fetch_forex_price, load_forex_price, make_pairs, MAJOR_CURRENCIES
 from fxpipeline.utils import handle_sigint
 
 logger = logging.getLogger(__name__)
@@ -30,18 +30,10 @@ def main():
     handle_sigint()
     config_logging()
 
-    from fxpipeline.data import ForexPriceRequest, CurrencyPair
-    import datetime
-
-    import sys
-
-    ticker = sys.argv[1]
-    source = sys.argv[2]
-    loader = get_loader(source)
-    req = ForexPriceRequest(CurrencyPair(ticker), 
-                          datetime.datetime(2025, 10, 10),
-                          datetime.datetime(2025, 10, 30))
-    loader.fetch(req)
+    # pairs = make_pairs(MAJOR_CURRENCIES)
+    pairs = make_pairs(["EUR", "USD"])
+    for pair in pairs:
+        fetch_forex_price(pair.ticker, "yahoo_finance", 1500)
 
 
 if __name__ == "__main__":

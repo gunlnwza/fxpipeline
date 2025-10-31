@@ -42,7 +42,7 @@ class CSVDatabase(ForexPriceDatabase):
         filename = f"{self.path}/{ticker}.csv"
         return pd.read_csv(filename, index_col="timestamp", parse_dates=True)
 
-    def have_in_cache(self, req: ForexPriceRequest) -> bool:  # TODO[implementation]: also include time
+    def have(self, req: ForexPriceRequest) -> bool:  # TODO[implementation]: also include time
         filename = f"{self.path}/{req.pair}.csv"
         if os.path.exists(filename):
             return True

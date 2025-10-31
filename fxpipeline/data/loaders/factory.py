@@ -2,7 +2,10 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-from . import ForexPriceLoader, PolygonForex, AlphaVantageForex, YahooFinanceForex
+from .base import ForexPriceLoader
+from .alpha_vantage import AlphaVantageForex
+from .polygon import PolygonForex
+from .yahoo_finance import YahooFinanceForex
 
 load_dotenv()
 
