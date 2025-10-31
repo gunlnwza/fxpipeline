@@ -1,5 +1,11 @@
 from itertools import combinations
 
+from dataclasses import dataclass
+import datetime
+
+import pandas as pd
+
+
 # TODO[data]: would be nice to remember what exotic pairs are not available
 
 # TODO[data]: hard code pairs instead, so we can reference from dict, begin by fetching list of pairs from Polygon API
@@ -100,3 +106,33 @@ class CurrencyPair:
 
 def make_pairs(currencies: list[str]) -> list[CurrencyPair]:
     return [CurrencyPair(cur_1, cur_2) for cur_1, cur_2 in combinations(currencies, 2)]
+
+
+@dataclass
+class ForexPriceRequest:
+    pair: CurrencyPair
+    start: datetime.datetime
+    end: datetime.datetime
+    tf_length: int = 1
+    tf_unit: str = "day"  # minute, day, week, month
+
+    def __str__(self) -> str:
+        start = self.start.strftime("%Y-%m-%d %H:%M:%S")
+        end = self.end.strftime("%Y-%m-%d %H:%M:%S")
+        return f"{self.pair}[{start}, {end}]"
+    
+    def copy(self) -> "ForexPriceRequest":
+        return ForexPriceRequest(self.pair, self.start, self.end)
+
+
+def make_forex_price_request(ticker: str, days=365) -> ForexPriceRequest:
+    today = datetime.datetime.now()
+    start = today - datetime.timedelta(days)
+    return ForexPriceRequest(CurrencyPair(ticker), start, today)
+
+
+# WHY REMEMBER ORDER?
+@dataclass
+class ForexPrice:
+    df: pd.DataFrame
+    req: ForexPriceRequest  # remember the 'order' of this dish

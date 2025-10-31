@@ -7,8 +7,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 from urllib3.exceptions import MaxRetryError
 
-from ..currency import make_pairs
-from ..forex_price import ForexPriceRequest, ForexPrice, make_forex_price_request
+from ..core import make_pairs, ForexPriceRequest, ForexPrice, make_forex_price_request
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +23,7 @@ class ForexPriceLoader(ABC):
         self.api_key = api_key
 
     @abstractmethod
-    def download(req: ForexPriceRequest) -> ForexPrice:
+    def download(req: ForexPriceRequest) -> ForexPrice:  # TODO[refactor]: change to just df
         """connect to the internet and download, can raise APIError"""
         pass
 

@@ -4,7 +4,7 @@ import pandas as pd
 from polygon import RESTClient
 
 from .base import ForexPriceLoader
-from ..forex_price import ForexPriceRequest, ForexPrice
+from ..core import ForexPriceRequest, ForexPrice
 
 logger = logging.getLogger(__name__)
 

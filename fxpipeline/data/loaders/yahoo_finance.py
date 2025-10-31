@@ -4,8 +4,7 @@ import warnings
 import yfinance as yf
 
 from .base import ForexPriceLoader
-from ..forex_price import ForexPriceRequest, ForexPrice
-from ..currency import CurrencyPair
+from ..core import CurrencyPair, ForexPriceRequest, ForexPrice
 
 logger = logging.getLogger(__name__)
 
