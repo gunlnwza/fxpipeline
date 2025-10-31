@@ -31,9 +31,8 @@
 - Should nuke the old v3 folder
 
 
----
+## 2025-10-31 - Refactoring data/
 
-## Ideas
-
-- Kalman filiter as MA, its Std. as Band
-- Maybe make Indicator class
+- Make fetch_forex_price() good.
+- Will implement parquet database soon
+- Should optimize is_up_to_date()
