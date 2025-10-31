@@ -1,25 +1,14 @@
 import os
-from io import StringIO
-
+import logging
+import time
+import random
 from abc import ABC, abstractmethod
 
-import logging
-import warnings
-
-import time
-import datetime
-
-import random
-import numpy as np
 import pandas as pd
-
-import requests
-import yfinance as yf
 from urllib3.exceptions import MaxRetryError
-from polygon import RESTClient
 
-from .forex_price import ForexPriceRequest, ForexPrice, make_forex_price_request
-from .currency_pair import make_pairs, CurrencyPair
+from ..currency import make_pairs
+from ..forex_price import ForexPriceRequest, ForexPrice, make_forex_price_request
 
 logger = logging.getLogger(__name__)
 
@@ -131,105 +120,3 @@ class ForexPriceLoader(ABC):
 
     def fetch_pair(self, ticker: str, days=1000):
         self.fetch_all_pairs([ticker[:3], ticker[3:]], days)
-
-
-class PolygonForex(ForexPriceLoader):
-    def __init__(self, path, api_key):
-        super().__init__(path, api_key)
-
-    def download(self, req: ForexPriceRequest) -> ForexPrice:
-        # download
-        aggs = []
-        client = RESTClient(self.api_key)
-        for a in client.list_aggs(
-            f"C:{req.pair}", 1, "day", req.start, req.end,
-            adjusted="true", sort="asc"
-        ):
-            aggs.append(a)
-        if not aggs:
-            return None
-
-        # clean
-        df = pd.DataFrame(aggs)
-        df.index = pd.to_datetime(df["timestamp"], unit="ms")
-        for name in ("timestamp", "transactions", "otc"):
-            df.drop(name, axis=1, inplace=True)
-
-        return ForexPrice(df, req)
-
-
-class AlphaVantageForex(ForexPriceLoader):
-    def __init__(self, path, api_key):
-        super().__init__(path, api_key)
-
-    def download(self, req: ForexPriceRequest):
-        """
-        download price from Alpha Vantage
-        return df on success, None on error
-
-        Parameters
-        [REQUIRED] `apikey`:
-        [REQUIRED] `from_symbol`:
-        [REQUIRED] `to_symbol`:
-        [REQUIRED] `function`: FX_INTRADAY, FX_DAILY, FX_WEEKLY, FX_MONTHLY
-
-        [REQUIRED if FX_INTRADAY] `interval`: 1min, 5min, 15min, 30min, 60min
-
-        [OPTIONAL] `datatype`: default=json, csv
-        [OPTIONAL if FX_INTRADAY, FX_DAILY] `outputsize`: default=compact, full
-
-        NOTE: 4H is not supported by the API
-        """
-        business_day = np.busday_count(req.start.date(), req.end.date() + datetime.timedelta(1))
-        download_full = business_day >= 100
-        params = {
-            "apikey": self.api_key,
-            "from_symbol": req.pair.base,
-            "to_symbol": req.pair.quote,
-            "function": "FX_DAILY",
-            "datatype": "csv",
-            "outputsize": "full" if download_full else "compact"
-        }
-        logger.debug("Alpha Vantage, downloading with option: " + params["outputsize"])
-
-        res = requests.get("https://www.alphavantage.co/query", params, timeout=10)
-        if not res.ok:
-            logger.error(f"HTTP {res.status_code} — cannot download {req}")
-            return None
-
-        content_type = res.headers.get("Content-Type", "")
-        if content_type and "json" in content_type.lower():
-            msg = res.json()
-            raise APIError(f"Alpha Vantage API error: {msg}")
-
-        df = pd.read_csv(StringIO(res.text), index_col="timestamp", parse_dates=True)
-        df = df.sort_index()
-        return ForexPrice(df, req)
-
-
-class YahooFinanceForex(ForexPriceLoader):
-    def __init__(self, path):
-        super().__init__(path, None)
-
-    def _convert_to_yf_ticker(self, pair: CurrencyPair) -> str:
-        if pair.base == "USD":
-            return f"{pair.quote}=X"
-        elif pair.quote == "USD":
-            return f"{pair.base}=X"
-        return f"{pair.ticker}=X"
-
-    def download(self, req: ForexPriceRequest) -> ForexPrice:
-        # download
-        ticker = self._convert_to_yf_ticker(req.pair)
-        warnings.filterwarnings("ignore")
-        df = yf.download(ticker, req.start, req.end, progress=False)
-        warnings.filterwarnings("default")
-
-        # clean
-        df.columns = df.columns.droplevel("Ticker")
-        df.rename(columns={
-            "Open": "open", "High": "high", "Low": "low",
-            "Close": "close", "Volume": "volume"}, inplace=True)
-        df.index.name = "timestamp"
-
-        return ForexPrice(df, req)

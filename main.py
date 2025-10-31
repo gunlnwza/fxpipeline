@@ -1,11 +1,6 @@
 import logging
-import datetime
 
 from fxpipeline.data import load_forex_price, get_loader
-
-from fxpipeline.data.forex_price import ForexPriceRequest
-from fxpipeline.data.currency_pair import CurrencyPair
-
 from fxpipeline.utils import handle_sigint
 
 logger = logging.getLogger(__name__)
@@ -35,11 +30,18 @@ def main():
     handle_sigint()
     config_logging()
 
-    # l = get_loader("alpha_vantage")
-    # l.fetch(ForexPriceRequest(CurrencyPair("USDTHB"), datetime.datetime(2025, 10, 10), datetime.datetime(2025, 10, 30)))
+    from fxpipeline.data import ForexPriceRequest, CurrencyPair
+    import datetime
 
-    df = load_forex_price("USDTHB")
-    print(df)
+    import sys
+
+    ticker = sys.argv[1]
+    source = sys.argv[2]
+    loader = get_loader(source)
+    req = ForexPriceRequest(CurrencyPair(ticker), 
+                          datetime.datetime(2025, 10, 10),
+                          datetime.datetime(2025, 10, 30))
+    loader.fetch(req)
 
 
 if __name__ == "__main__":
