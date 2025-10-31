@@ -2,10 +2,11 @@ import logging
 import warnings
 from typing import TYPE_CHECKING
 
+import pandas as pd
 import yfinance as yf
 
 from .base import ForexPriceLoader
-from ..core import CurrencyPair, ForexPriceRequest, ForexPrice
+from ..core import CurrencyPair, ForexPriceRequest
 
 if TYPE_CHECKING:
     import pandas as pd

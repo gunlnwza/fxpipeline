@@ -129,10 +129,3 @@ def make_forex_price_request(ticker: str, days=365) -> ForexPriceRequest:
     today = datetime.datetime.now()
     start = today - datetime.timedelta(days)
     return ForexPriceRequest(CurrencyPair(ticker), start, today)
-
-
-# WHY REMEMBER ORDER?
-@dataclass
-class ForexPrice:
-    df: pd.DataFrame
-    req: ForexPriceRequest  # remember the 'order' of this dish

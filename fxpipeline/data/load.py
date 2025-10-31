@@ -1,16 +1,13 @@
 import pandas as pd
 
-from .get_loader import get_loader
+from .database import get_database
 
 
-# TODO: currently Loaders are responsible for both downloading and loading, I hate that.
 def load_forex_price(ticker: str, source: str = "alpha_vantage") -> pd.DataFrame:
-    """
-    Load existing price from cache 
-    """
-    loader = get_loader(source)
+    """Load price from local cache"""
+    database = get_database(source)
     try:
-        df = loader.load_every_row(ticker)
+        df = database.load(ticker)
         return df
     except FileNotFoundError as e:
         print("Error:", e)
