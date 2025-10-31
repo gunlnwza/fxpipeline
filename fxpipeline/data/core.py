@@ -91,6 +91,10 @@ class CurrencyPair:
         self.base = cur_1
         self.quote = cur_2
 
+        self.pip_digits = 4
+        if self.base == "JPY" or self.quote == "JPY":
+            self.pip_digits = 2
+
     @property
     def ticker(self):
         return self.base + self.quote

@@ -6,6 +6,8 @@ import numpy as np
 import joblib
 from sklearn.ensemble import RandomForestRegressor
 
+from ..data import load_forex_price
+
 
 class Model:
     def __init__(self):
@@ -97,8 +99,7 @@ if __name__ == "__main__":
     # Actually, this match how retail traders trade, they look at H1, or H4, then go in with M15.
     # Some people use H4 and go in H1, or use D1, go in H1.
 
-    df = pd.read_csv("data/.alpha_vantage_cache/EURUSD.csv")  # TODO[Loading]: loading is too low level, I want it polished and posh
-
+    df = load_forex_price("EURUSD")
     n = 100
     prices = preprocess(df["close"], n)
     z_names = [f"z-{i}" for i in range(n)]
