@@ -67,3 +67,8 @@ def get_database(source: str = "alpha_vantage", method: str = "csv"):
     CACHES_PATH = Path(__file__).parent.absolute()
     path = f"{CACHES_PATH}/.{source}_cache"
     return CSVDatabase(path)
+
+
+class ParquetDatabase(ForexPriceDatabase):
+    def __init__(self):
+        super().__init__()

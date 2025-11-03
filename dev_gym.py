@@ -1,4 +1,5 @@
 import gymnasium as gym
+import pygame as pg
 
 class MyEnv(gym.Env):
     def __init__(self):
