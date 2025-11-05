@@ -28,7 +28,7 @@ class Model:
 
     def predict(self, X):
         y_pred = self._model.predict(X)
-        return y_pred
+        return y_pred, {}
 
 
 def evaluate_performance(y_test, y_pred):
@@ -54,10 +54,11 @@ def evaluate_performance(y_test, y_pred):
     print(f"Max drawdown in pips: {max_drawdown * 100:.0f}")
 
 
-if __name__ == "__main__":
+def main():
     from sklearn.model_selection import TimeSeriesSplit
 
-    from utils import Stopwatch
+    from ..utils import Stopwatch
+    from ..preprocessing.normalize import preprocess
 
     # NOTE: What if we predict Low and High, and let the model do the buy-low-sell-high strategy?
     # Would need two timeframes, big and small
@@ -67,10 +68,10 @@ if __name__ == "__main__":
     # Some people use H4 and go in H1, or use D1, go in H1.
 
     df = load_forex_price("EURUSD")
-    n = 100
+    n = 50
     prices = preprocess(df["close"], n)
     z_names = [f"z-{i}" for i in range(n)]
-    X = np.array(prices[z_names + ["mean", "std"]])
+    X = np.array(prices[z_names])
     y = np.array(prices["z+1"])
 
     sw = Stopwatch()

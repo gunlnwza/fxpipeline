@@ -1,6 +1,6 @@
 import logging
 
-from fxpipeline.data import fetch_forex_price, load_forex_price, make_pairs, MAJOR_CURRENCIES, CurrencyPair
+from fxpipeline.data import fetch_forex_price, load_forex_price
 from fxpipeline.utils import handle_sigint
 
 logger = logging.getLogger(__name__)
@@ -26,15 +26,19 @@ def config_logging():
             logging.getLogger(p).setLevel(level)
 
 
-def main():
-    handle_sigint()
-    config_logging()
+# def main():
+#     handle_sigint()
+#     config_logging()
 
-    # pairs = make_pairs(MAJOR_CURRENCIES)
-    # pairs = make_pairs(["EUR", "USD"])
-    # for pair in pairs:
-        # fetch_forex_price(pair.ticker, "yahoo_finance", 1500)
-    fetch_forex_price("GBPAUD", 100)
+#     # pairs = make_pairs(MAJOR_CURRENCIES)
+#     # pairs = make_pairs(["EUR", "USD"])
+#     # for pair in pairs:
+#         # fetch_forex_price(pair.ticker, "yahoo_finance", 1500)
+#     fetch_forex_price("GBPAUD", 100)
+
 
 if __name__ == "__main__":
+    from fxpipeline.backtest.trading_env import main
+    # from fxpipeline.backtest.model import main
+
     main()

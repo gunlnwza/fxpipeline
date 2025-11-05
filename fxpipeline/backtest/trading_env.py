@@ -7,8 +7,8 @@ import pygame as pg
 from gymnasium import spaces
 import gymnasium as gym
 
-from fxpipeline.data import load_forex_price
-from fxpipeline.utils import handle_sigint
+from ..data import load_forex_price
+from ..utils import handle_sigint
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -26,12 +26,17 @@ class TradingEnv(gym.Env):
             pg.display.init()
             self.screen = pg.display.set_mode((500, 500))
             self.clock = pg.time.Clock()
+            # self.fps = 20
             self.fps = 5
 
         # data
         self._df = df
         self._closes = df['close'].to_numpy()
         self._obs_size = obs_size
+
+        self.order = 0
+        self.open_point = None
+        self.total_pips = 0
 
         # environment state
         self._i = obs_size
@@ -47,19 +52,39 @@ class TradingEnv(gym.Env):
 
     def step(self, action):
         """Update environment with actions"""
-        obs = self._get_obs()
-
-        cur_price = obs[-1]
-        prev_price = obs[-2]
+        prices = self._closes[self._i - self._obs_size : self._i]
 
         # TODO: use Order's pnl logic
-        pnl = 0
-        if action == 1:
-            pnl = cur_price - prev_price
-        elif action == -1:
-            pnl = -(cur_price - prev_price)
-        reward = pnl
+        reward = 0
+        if self.order == 1:
+            if action == -1:
+                reward = prices[-1] - self.open_point[1]
+                self.order = -1
+                self.open_point = (self._i, prices[-1])
+            elif action == 0:
+                reward = prices[-1] - self.open_point[1]
+                self.order = 0
+                self.open_point = (self._i, prices[-1])
+        elif self.order == -1:
+            if action == 1:
+                reward = -(prices[-1] - self.open_point[1])
+                self.order = 1
+                self.open_point = (self._i, prices[-1])
+            elif action == 0:
+                reward = -(prices[-1] - self.open_point[1])
+                self.order = 0
+                self.open_point = (self._i, prices[-1])
+        else:
+            if action == 1:
+                self.order = 1
+                self.open_point = (self._i, prices[-1])
+            elif action == -1:
+                self.order = -1
+                self.open_point = (self._i, prices[-1])
+        self.total_pips += round(reward * 10000)
+        print(action, self.total_pips)
 
+        obs = self._get_obs()
         info = {}
         done = self.render()
         if done:
@@ -82,25 +107,44 @@ class TradingEnv(gym.Env):
             print(f"i = {self._i}")
         elif self.render_mode == "human":
             for event in pg.event.get():
-                if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_q):
+                if event.type == pg.QUIT:
                     self.close()
-                    self.render_mode = None
                     return True
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_q:
+                        self.close()
+                        return True
+                    elif event.key == pg.K_a:
+                        if self.fps - 4 > 0:
+                            self.fps -= 4
+                    elif event.key == pg.K_d:
+                        if self.fps + 4 <= 20:
+                            self.fps += 4
 
             w = self.screen.get_width()
             h = self.screen.get_height()
 
-            def to_screen_x(x):
-                return 10 + (w // (len(obs) + 1)) * x
+            def to_screen_x(index):
+                return 10 + (w // (len(obs) + 1)) * index
 
-            def to_screen_y(x):
-                return h // 2 - x * h // 10
+            def to_screen_y(price):
+                return h - ((price - min_price * 0.99) / (max_price * 1.01 - min_price * 0.99)) * h
+
 
             self.screen.fill("black")
-            for i in range(len(obs) - 1):
-                start = (to_screen_x(i), to_screen_y(obs[i]))
-                end = (to_screen_x(i + 1), to_screen_y(obs[i + 1]))
+            prices = self._closes[self._i - self._obs_size : self._i]
+            max_price = max(prices)
+            min_price = min(prices)
+            for i in range(len(prices) - 1):
+                start = (to_screen_x(i), to_screen_y(prices[i]))
+                end = (to_screen_x(i + 1), to_screen_y(prices[i + 1]))
                 pg.draw.line(self.screen, "white", start, end, 1)
+
+            if self.order != 0:
+                start = (0, to_screen_y(self.open_point[1]))
+                end = (w, to_screen_y(self.open_point[1]))
+                color = "green" if self.order == 1 else "red"
+                pg.draw.line(self.screen, color, start, end)
 
             pg.display.flip()
             self.clock.tick(self.fps)
@@ -111,27 +155,34 @@ class TradingEnv(gym.Env):
         """Close environemnt, free stuffs"""
         if self.render_mode == "human":
             pg.quit()
-
-
-class DummyModel:
-    def __init__(self):
-        pass
-
-    def predict(self, obs):
-        action = 0
-        return action, {}
+            self.render_mode = None
 
 
 def main():
+    from .model import Model
+
     handle_sigint()
 
     df = load_forex_price("EURUSD")
     env = TradingEnv(df, obs_size=50, render_mode="human")
-    model = DummyModel()
+    model = Model()
 
     obs, _ = env.reset()
     while True:
+        obs = obs.reshape((1, -1))
+        # print(obs)
         action, states = model.predict(obs)
+        action = action[0]
+        print(action, end=" ; ")
+
+        threshold = 0  # z-score
+        if action > threshold:
+            action = 1
+        elif action < -threshold:
+            action = -1
+        else:
+            action = 0
+
         obs, reward, terminated, truncated, _ = env.step(action)
         if terminated or truncated:
             break
