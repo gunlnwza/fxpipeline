@@ -38,6 +38,8 @@ class TradingEnv(gym.Env):
         self.open_point = None
         self.total_pips = 0
 
+        self.hist = []
+
         # environment state
         self._i = obs_size
 
@@ -81,8 +83,9 @@ class TradingEnv(gym.Env):
             elif action == -1:
                 self.order = -1
                 self.open_point = (self._i, prices[-1])
+    
         self.total_pips += round(reward * 10000)
-        print(action, self.total_pips)
+        self.hist.append(self.total_pips)
 
         obs = self._get_obs()
         info = {}
@@ -104,7 +107,7 @@ class TradingEnv(gym.Env):
         """Visualize what the agent sees"""
         obs = self._get_obs()
         if self.render_mode == "terminal":
-            print(f"i = {self._i}")
+            print(f"i={self._i}, order={self.order}, pips={self.total_pips}")
         elif self.render_mode == "human":
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -160,11 +163,12 @@ class TradingEnv(gym.Env):
 
 def main():
     from .model import Model
+    import matplotlib.pyplot as plt
 
     handle_sigint()
 
     df = load_forex_price("EURUSD")
-    env = TradingEnv(df, obs_size=50, render_mode="human")
+    env = TradingEnv(df, obs_size=50, render_mode="terminal")
     model = Model()
 
     obs, _ = env.reset()
@@ -173,7 +177,6 @@ def main():
         # print(obs)
         action, states = model.predict(obs)
         action = action[0]
-        print(action, end=" ; ")
 
         threshold = 0  # z-score
         if action > threshold:
@@ -186,6 +189,10 @@ def main():
         obs, reward, terminated, truncated, _ = env.step(action)
         if terminated or truncated:
             break
+
+    plt.axhline(0, color="black", lw=0.8)
+    plt.plot(env.hist)
+    plt.show()
 
     env.close()
 
