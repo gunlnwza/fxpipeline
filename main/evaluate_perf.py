@@ -53,11 +53,12 @@ def main():
     tscv = TimeSeriesSplit(2)
     for train_index, test_index in tscv.split(X):
         sw.start()
-        
+
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
-        print(f"Train: [{train_index[0]}, {train_index[-1]}] | Test: [{test_index[0]}, {test_index[-1]}]")
+        print(f"Train: [{train_index[0]}, {train_index[-1]}]"
+              f"| Test: [{test_index[0]}, {test_index[-1]}]")
         print()
 
         if not model._trained:

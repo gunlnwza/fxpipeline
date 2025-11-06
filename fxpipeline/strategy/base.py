@@ -15,7 +15,7 @@ class Model:
             self._trained = False
 
     def fit(self, X_train, y_train):
-        assert self._trained == False
+        assert self._trained is False
         self._model.fit(X_train, y_train)
         self._trained = True
         joblib.dump(self._model, self._filename)

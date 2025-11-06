@@ -32,14 +32,14 @@ class TradingEnv(gym.Env):
 
     def _build_observation_space(self, shape):
         return spaces.Box(-np.inf, np.inf, shape, np.float32)
-       
+
     def _build_renderer(self, render_mode):
         if render_mode == "human":
             return PygameRenderer()
         elif render_mode == "terminal":
             return TerminalRenderer()
         return None
-        
+
     def _get_observation(self):
         return self.data.get_observation()
 

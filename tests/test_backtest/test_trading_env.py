@@ -18,15 +18,19 @@ df = pd.DataFrame({
 })
 env = TradingEnv(df, obs_size=5, render_mode=None)
 
+
 def test_action_space():
     assert env.action_space == spaces.Discrete(3, start=-1)
+
 
 def test_observation_space():
     """Must infer shape from passed df"""
     pass
 
+
 def test_get_observation():
     pass
+
 
 def test_get_info():
     pass

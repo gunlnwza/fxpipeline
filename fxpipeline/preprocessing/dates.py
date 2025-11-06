@@ -1,4 +1,7 @@
-def separate_timestamp(df: pd.DataFrame):
+import pandas as pd
+
+
+def separate_timestamp(df: pd.DataFrame) -> pd.DataFrame:
     df["year"] = df.index.year
     df["month"] = df.index.month
     df["day"] = df.index.day

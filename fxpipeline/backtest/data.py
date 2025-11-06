@@ -27,11 +27,11 @@ class Order:
     def close(self, i, price):
         self._close_i = i
         self._close_price = price
-    
+
     @property
     def profit(self):
         return self.current_profit(self._close_price)
-    
+
     def current_profit(self, price):
         price_diff = price - self._open_price
         if self._type == "sell":
@@ -54,12 +54,12 @@ class Data:
         self.total_profit = 0
 
     def get_observation(self):
-        closes = self._closes[self._i - self._obs_size : self._i]
+        closes = self._closes[self._i - self._obs_size:self._i]
         closes = (closes - closes.mean()) / closes.std()
         return closes
 
     def get_info(self):
-        closes = self._closes[self._i - self._obs_size : self._i]
+        closes = self._closes[self._i - self._obs_size:self._i]
 
         info = {
             "i": self._i,
@@ -88,7 +88,7 @@ class Data:
     @property
     def current_price(self):
         return self._closes[self._i - 1]
-    
+
     def buy(self):
         assert self.order is None
         self.order = Order("buy", self._i, self.current_price)
@@ -103,11 +103,11 @@ class Data:
         self.order.close(self._i, self.current_price)
         profit = self.order.profit
         self.order = None
-        
+
         self.total_profit += profit
-        
+
         return profit
-    
+
     def current_profit(self):
         assert self.order
         return self.order.current_profit(self.current_price)

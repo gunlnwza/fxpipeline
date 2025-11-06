@@ -22,7 +22,7 @@ def test_stopwatch():
     sw.start()
     time.sleep(0.05)
     assert sw.time - 0.05 <= tol
-        
+
     sw.start()
     time.sleep(0.5)
     sw.stop()
