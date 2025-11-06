@@ -24,3 +24,13 @@ class Model:
     def predict(self, X):
         y_pred = self._model.predict(X)
         return y_pred
+
+
+class Strategy:
+    def __init__(self):
+        pass
+
+    def predict(self, obs):
+        actions = 0
+        states = {}
+        return actions, states
