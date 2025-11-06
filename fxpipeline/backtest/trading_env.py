@@ -87,6 +87,7 @@ class TradingEnv(gym.Env):
         truncated = False
         if self.renderer:
             truncated = self.renderer.render(self.data)
+            assert isinstance(truncated, bool)
         return truncated
 
     def close(self):

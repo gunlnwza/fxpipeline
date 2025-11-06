@@ -4,16 +4,22 @@ import pandas as pd
 from gymnasium import spaces
 
 from fxpipeline.backtest import TradingEnv
+from fxpipeline.backtest.data import Order
 
 """
 NOTE: does not test rendering-related features
 """
 
-s  = pd.Series([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])  # have 6 windows
+df_ohlc = pd.DataFrame({
+    "open":  [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],  # have 6 windows
+    "high":  [30, 31, 32, 33, 34, 35, 36, 37, 38, 39],
+    "low":   [ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
+    "close": [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+})
+df_close = pd.DataFrame({
+    "close": [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+})
 obs_size = 5
-
-df_ohlc = pd.DataFrame({"open": s + 10, "high": s + 30, "low": s, "close": s + 20})
-df_close = pd.DataFrame({"close": s + 20})
 
 env_ohlc = TradingEnv(df_ohlc, obs_size, render_mode=None)
 env_close = TradingEnv(df_close, obs_size, render_mode=None)
@@ -46,11 +52,46 @@ def test_step():
 
 
 def test_buy():
-    for _ in range(4):
+    env_ohlc.reset()
+
+    for _ in range(5):
         observation, reward, terminated, truncated, info = env_ohlc.step(1)
         assert truncated is False
         assert reward == 0
 
     observation, reward, terminated, truncated, info = env_ohlc.step(0)
-    assert reward == 4
+    assert reward == 5
     assert truncated is True
+
+
+def test_sell():
+    env_ohlc.reset()
+
+    for _ in range(5):
+        observation, reward, terminated, truncated, info = env_ohlc.step(-1)
+        assert truncated is False
+        assert reward == 0
+
+    observation, reward, terminated, truncated, info = env_ohlc.step(0)
+    assert reward == -5
+    assert truncated is True
+
+
+def test_open_then_close():
+    for action in (0, -1):
+        env_ohlc.reset()
+        observation, reward, terminated, truncated, info = env_ohlc.step(1)
+        assert env_ohlc.data.order == Order("buy", 5, 24)
+        assert reward == 0
+        observation, reward, terminated, truncated, info = env_ohlc.step(action)
+        assert env_ohlc.data.order is None
+        assert reward == 1
+
+    for action in (0, 1):
+        env_ohlc.reset()
+        observation, reward, terminated, truncated, info = env_ohlc.step(-1)
+        assert env_ohlc.data.order == Order("sell", 5, 24)
+        assert reward == 0
+        observation, reward, terminated, truncated, info = env_ohlc.step(action)
+        assert env_ohlc.data.order is None
+        assert reward == -1

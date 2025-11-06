@@ -20,7 +20,8 @@ class Order:
         self._close_price = None
 
     def __repr__(self):
-        return f"Order({self._type}, ({self._open_i}, {self._open_price}), ({self._close_i}, {self._close_price}))"
+        return f"Order({self._type}, ({self._open_i}, {self._open_price})" \
+            f", ({self._close_i}, {self._close_price}))"
 
     def __eq__(self, other: "Order"):
         if not isinstance(other, Order):

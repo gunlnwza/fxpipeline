@@ -1,3 +1,5 @@
+import pytest
+
 from fxpipeline.backtest.data import Order
 
 buy = Order("buy", 0, 21)
@@ -9,6 +11,16 @@ def test_init():
     assert buy._open_price == 21
     assert buy._close_i is None
     assert buy._close_price is None
+
+
+def test_repr():
+    assert buy.__repr__() == "Order(buy, (0, 21), (None, None))"
+
+
+def test_eq():
+    assert (buy == sell) is False
+    with pytest.raises(NotImplementedError):
+        buy == 42
 
 
 def test_current_profit():
