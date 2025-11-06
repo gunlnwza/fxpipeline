@@ -70,10 +70,10 @@ class TradingEnv(gym.Env):
     def step(self, action):
         """Update environment with actions"""
         observation = self._get_observation()
-        reward = self._interpret_action(action)
-        terminated = self.data.is_terminated()
-        truncated = self.render() or self.data.is_truncated()
         info = self._get_info()
+        reward = self._interpret_action(action)
+        terminated = self.data.terminated
+        truncated = self.render() or self.data.truncated
         self.data.step()
         return observation, reward, terminated, truncated, info
 

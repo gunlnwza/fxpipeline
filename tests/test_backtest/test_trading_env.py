@@ -9,7 +9,7 @@ from fxpipeline.backtest import TradingEnv
 NOTE: does not test rendering-related features
 """
 
-s  = pd.Series([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+s  = pd.Series([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])  # have 6 windows
 obs_size = 5
 
 df_ohlc = pd.DataFrame({"open": s + 10, "high": s + 30, "low": s, "close": s + 20})
@@ -32,13 +32,13 @@ def test_observation_space():
 
 def test_reset():
     observation, info = env_ohlc.reset()
-    assert isinstance(observation, np.array)
+    assert isinstance(observation, np.ndarray)
     assert isinstance(info, dict)
 
 
 def test_step():
     observation, reward, terminated, truncated, info = env_ohlc.step(0)
-    assert isinstance(observation, np.array)
+    assert isinstance(observation, np.ndarray)
     assert reward == 0
     assert terminated is False
     assert truncated is False
@@ -46,10 +46,11 @@ def test_step():
 
 
 def test_buy():
-    for _ in range(3):
+    for _ in range(4):
         observation, reward, terminated, truncated, info = env_ohlc.step(1)
+        assert truncated is False
         assert reward == 0
 
     observation, reward, terminated, truncated, info = env_ohlc.step(0)
-    assert reward == 3
+    assert reward == 4
     assert truncated is True

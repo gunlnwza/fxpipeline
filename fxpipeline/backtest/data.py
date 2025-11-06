@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import numpy as np
+
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -16,6 +18,16 @@ class Order:
 
         self._close_i = None
         self._close_price = None
+
+    def __repr__(self):
+        return f"Order({self._type}, ({self._open_i}, {self._open_price}), ({self._close_i}, {self._close_price}))"
+
+    def __eq__(self, other: "Order"):
+        if not isinstance(other, Order):
+            raise NotImplementedError
+        return self._type == other._type \
+            and self._open_i == other._open_i and self._open_price == other._open_price \
+            and self._close_i == other._close_i and self._close_price == other._close_price
 
     def get_info(self) -> dict:
         return {
@@ -41,53 +53,49 @@ class Order:
 
 class Data:
     def __init__(self, df: pd.DataFrame, obs_size: int):
-        # training/testing data
-        self._df = df
-        self._closes = df['close'].to_numpy()
-        self._obs_size = obs_size
+        assert "close" in df
 
-        # states
-        self._i: int = self._obs_size  # window is [i - obs_size, i)
+        self._df = df
+        self._arr = np.array(df)  # numpy array copy of df
+        self._obs_size = obs_size
+        self._i: int = obs_size  # window is [i - obs_size, i)
+
         self.order: Optional[Order] = None
 
         # info + log
         self.total_profit = 0
 
     def get_observation(self):
-        closes = self._closes[self._i - self._obs_size:self._i]
-        closes = (closes - closes.mean()) / closes.std()
-        return closes
+        return self._arr[self._i - self._obs_size:self._i].transpose()
 
     def get_info(self):
-        closes = self._closes[self._i - self._obs_size:self._i]
-
         info = {
             "i": self._i,
-            "closes": closes,
             "total_profit": self.total_profit
         }
         if self.order:
             info["order"] = self.order.get_info()
-
         return info
 
     def step(self):
-        if not self.is_truncated():
+        if not self.terminated and not self.truncated:
             self._i += 1
 
     def reset(self):
         self._i = self._obs_size
         self.order = None
 
-    def is_terminated(self):
+    @property
+    def terminated(self):
         return False
 
-    def is_truncated(self):
+    @property
+    def truncated(self):
         return self._i >= len(self._df)
 
     @property
     def current_price(self):
-        return self._closes[self._i - 1]
+        return self._df.loc[self._i - 1, "close"]
 
     def buy(self):
         assert self.order is None
