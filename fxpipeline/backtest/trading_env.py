@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import pandas as pd
 import numpy as np
@@ -14,156 +14,283 @@ if TYPE_CHECKING:
     import pandas as pd
 
 
-class TradingEnv(gym.Env):
-    def __init__(self, df: pd.DataFrame, obs_size=10, render_mode=None):
-        self.spec = None
-        self.metadata = None
-        self.np_random = None
+class Order:
+    def __init__(self, type: str, i: int, price: float):
+        self._type = type.lower()
+        assert self._type in ("buy", "sell")
 
-        # pygame
-        self.render_mode = render_mode
-        if render_mode == "human":
-            pg.display.init()
-            self.screen = pg.display.set_mode((500, 500))
-            self.clock = pg.time.Clock()
-            # self.fps = 20
-            self.fps = 5
+        self._open_i = i
+        self._open_price = price
 
-        # data
+        self._close_i = None
+        self._close_price = None
+
+    def get_info(self) -> dict:
+        return {
+            "type": self._type,
+            "open_i": self._open_i, "open_price": self._open_price,
+            "close_i": self._close_i, "close_price": self._close_price
+        }
+
+    def close(self, i, price):
+        self._close_i = i
+        self._close_price = price
+    
+    @property
+    def profit(self):
+        price_diff = self._close_price - self._open_price
+        if self._type == "sell":
+            price_diff *= -1
+        return price_diff
+    
+
+class Data:
+    def __init__(self, df, obs_size):
+        # training/testing data
         self._df = df
         self._closes = df['close'].to_numpy()
         self._obs_size = obs_size
 
-        self.order = 0
-        self.open_point = None
-        self.total_pips = 0
+        # states
+        self._i: int = self._obs_size  # window is [i - obs_size, i)
+        self.order: Optional[Order] = None
 
-        self.hist = []
+        # info + log
+        self.total_profit = 0
 
-        # environment state
-        self._i = obs_size
-
-        # observation & action spaces
-        self.action_space = spaces.Discrete(3, start=-1)  # -1 = sell, 0 = hold, 1 = buy
-        self.observation_space = spaces.Box(-np.inf, np.inf, (1, obs_size), np.float32)
-
-    def _get_obs(self):
+    def get_observation(self):
         closes = self._closes[self._i - self._obs_size : self._i]
         closes = (closes - closes.mean()) / closes.std()
         return closes
 
-    def step(self, action):
-        """Update environment with actions"""
-        prices = self._closes[self._i - self._obs_size : self._i]
+    def get_info(self):
+        info = {
+            "i": self._i,
+            "closes": self._closes[self._i - self._obs_size : self._i],
+            "total_profit": self.total_profit
+        }
+        if self.order:
+            info["order"] = self.order.get_info()
+        return info
 
-        # TODO: use Order's pnl logic
-        reward = 0
-        if self.order == 1:
-            if action == -1:
-                reward = prices[-1] - self.open_point[1]
-                self.order = -1
-                self.open_point = (self._i, prices[-1])
-            elif action == 0:
-                reward = prices[-1] - self.open_point[1]
-                self.order = 0
-                self.open_point = (self._i, prices[-1])
-        elif self.order == -1:
-            if action == 1:
-                reward = -(prices[-1] - self.open_point[1])
-                self.order = 1
-                self.open_point = (self._i, prices[-1])
-            elif action == 0:
-                reward = -(prices[-1] - self.open_point[1])
-                self.order = 0
-                self.open_point = (self._i, prices[-1])
-        else:
-            if action == 1:
-                self.order = 1
-                self.open_point = (self._i, prices[-1])
-            elif action == -1:
-                self.order = -1
-                self.open_point = (self._i, prices[-1])
-    
-        self.total_pips += round(reward * 10000)
-        self.hist.append(self.total_pips)
+    def step(self):
+        if not self.is_truncated():
+            self._i += 1
 
-        obs = self._get_obs()
-        info = {}
-        done = self.render()
-        if done:
-            return obs, reward, done, False, info
-
-        # advance time
-        self._i += 1
-        done = self._i >= len(self._closes)
-        return obs, reward, done, False, info
-
-    def reset(self, seed=None):
-        """Reset environment to initial state"""
+    def reset(self):
         self._i = self._obs_size
-        return self._get_obs(), {}
+        self.order = None
 
-    def render(self):
-        """Visualize what the agent sees"""
-        obs = self._get_obs()
-        if self.render_mode == "terminal":
-            print(f"i={self._i}, order={self.order}, pips={self.total_pips}")
-        elif self.render_mode == "human":
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    self.close()
-                    return True
-                elif event.type == pg.KEYDOWN:
-                    if event.key == pg.K_q:
-                        self.close()
-                        return True
-                    elif event.key == pg.K_a:
-                        if self.fps - 4 > 0:
-                            self.fps -= 4
-                    elif event.key == pg.K_d:
-                        if self.fps + 4 <= 20:
-                            self.fps += 4
-
-            w = self.screen.get_width()
-            h = self.screen.get_height()
-
-            def to_screen_x(index):
-                return 10 + (w // (len(obs) + 1)) * index
-
-            def to_screen_y(price):
-                return h - ((price - min_price * 0.99) / (max_price * 1.01 - min_price * 0.99)) * h
-
-
-            self.screen.fill("black")
-            prices = self._closes[self._i - self._obs_size : self._i]
-            max_price = max(prices)
-            min_price = min(prices)
-            for i in range(len(prices) - 1):
-                start = (to_screen_x(i), to_screen_y(prices[i]))
-                end = (to_screen_x(i + 1), to_screen_y(prices[i + 1]))
-                pg.draw.line(self.screen, "white", start, end, 1)
-
-            if self.order != 0:
-                start = (0, to_screen_y(self.open_point[1]))
-                end = (w, to_screen_y(self.open_point[1]))
-                color = "green" if self.order == 1 else "red"
-                pg.draw.line(self.screen, color, start, end)
-
-            pg.display.flip()
-            self.clock.tick(self.fps)
-
+    def is_terminated(self):
         return False
 
-    def close(self):
-        """Close environemnt, free stuffs"""
-        if self.render_mode == "human":
-            pg.quit()
-            self.render_mode = None
+    def is_truncated(self):
+        return self._i >= len(self._df)
 
+    @property
+    def current_price(self):
+        return self._closes[self._i - 1]
+    
+    def buy(self):
+        assert self.order is None
+        self.order = Order("buy", self._i, self.current_price)
+
+    def sell(self):
+        assert self.order is None
+        self.order = Order("sell", self._i, self.current_price)
+
+    def close_order(self):
+        assert self.order is not None
+
+        self.order.close(self._i, self.current_price)
+        profit = self.order.profit
+        self.order = None
+        
+        self.total_profit += profit
+        
+        return profit
+
+
+class Renderer:
+    def __init__(self):
+        pass
+
+    def render(self, data: Data):
+        truncated = False
+        return truncated
+
+    def close(self):
+        pass
+
+class PygameRenderer(Renderer):
+    def __init__(self):
+        pg.display.init()
+        self.screen = pg.display.set_mode((500, 500))
+        self.clock = pg.time.Clock()
+        self.fps = 5
+
+    def handle_events(self):
+        for e in pg.event.get():
+            if e.type == pg.QUIT:
+                self.close()
+                return True
+            elif e.type == pg.KEYDOWN:
+                if e.key == pg.K_q:
+                    self.close()
+                    return True
+                elif e.key == pg.K_a:
+                    if self.fps - 4 > 0:
+                        self.fps -= 4
+                elif e.key == pg.K_d:
+                    if self.fps + 4 <= 20:
+                        self.fps += 4
+        return False
+
+    def render(self, data):
+        truncated = self.handle_events()
+        if truncated:
+            return truncated
+
+        info = data.get_info()
+        closes = info["closes"]
+        order = info.get("order")
+
+        w = self.screen.get_width()
+        h = self.screen.get_height()
+
+        def to_screen_x(index):
+            return 10 + (w // (len(closes) + 1)) * index
+
+        def to_screen_y(price):
+            return h - ((price - min_price * 0.99) / (max_price * 1.01 - min_price * 0.99)) * h
+
+        self.screen.fill("black")
+        max_price = max(closes)
+        min_price = min(closes)
+        for i in range(len(closes) - 1):
+            start = (to_screen_x(i), to_screen_y(closes[i]))
+            end = (to_screen_x(i + 1), to_screen_y(closes[i + 1]))
+            pg.draw.line(self.screen, "white", start, end, 1)
+
+        if order:
+            start = (0, to_screen_y(order["open_price"]))
+            end = (w, to_screen_y(order["open_price"]))
+            color = "green" if order["type"] == "buy" else "red"
+            pg.draw.line(self.screen, color, start, end)
+
+        pg.display.flip()
+        self.clock.tick(self.fps)
+
+    def close(self):
+        pg.quit()
+
+class TerminalRenderer(Renderer):
+    def __init__(self):
+        pass
+
+    def render(self, data):
+        info = data.get_info()
+        # order = info.get("order")
+        print(f"i={info['i']}, total_profit={info['total_profit']:.4f}")
+
+
+class TradingEnv(gym.Env):
+    metadata = {
+        'render.modes': ['terminal', 'human'],
+        'render_fps': 5
+    }
+
+    def __init__(self, df: pd.DataFrame, obs_size=10, render_mode=None):
+        self.action_space = self._build_action_space()
+        self.observation_space = self._build_observation_space((1, obs_size))
+
+        self.data = Data(df, obs_size)
+        self.renderer = self._build_renderer(render_mode)
+
+    def _build_action_space(self):
+        return spaces.Discrete(3, start=-1)
+
+    def _build_observation_space(self, shape):
+        return spaces.Box(-np.inf, np.inf, shape, np.float32)
+       
+    def _build_renderer(self, render_mode):
+        if render_mode == "human":
+            return PygameRenderer()
+        elif render_mode == "terminal":
+            return TerminalRenderer()
+        return None
+        
+    def _get_observation(self):
+        return self.data.get_observation()
+
+    def _get_info(self):
+        return self.data.get_info()
+
+    def _interpret_action(self, action) -> float:
+        order = self.data.order
+
+        reward = 0
+        if action == 1:
+            if order and order._type == "sell":
+                reward += self.data.close_order()
+            if not order:
+                self.data.buy()
+        elif action == 0:
+            if order:
+                reward += self.data.close_order()
+        elif action == -1:
+            if order and order._type == "buy":
+                reward += self.data.close_order()
+            if not order:
+                self.data.sell()
+
+        return reward
+
+    def step(self, action):
+        """Update environment with actions"""
+        observation = self._get_observation()
+        reward = self._interpret_action(action)
+        terminated = self.data.is_terminated()
+        truncated = self.render() or self.data.is_truncated()
+        info = self._get_info()
+        self.data.step()
+        return observation, reward, terminated, truncated, info
+
+    def reset(self):
+        """Reset environment to initial state"""
+        self.data.reset()
+        return self._get_observation(), self._get_info()
+
+    def render(self) -> bool:
+        """Visualize environment, return True if truncated"""
+        truncated = False
+        if self.renderer:
+            truncated = self.renderer.render(self.data)
+        return truncated
+
+    def close(self):
+        """Close environment, free stuffs"""
+        if self.renderer:
+            self.renderer.close()
+
+
+# TODO: This has to go, make wrappers instead
+def get_action(model, obs):
+    obs = obs.reshape((1, -1))
+    action, states = model.predict(obs)
+    action = action[0]
+
+    threshold = 1  # z-score
+    if action > threshold:
+        action = 1
+    elif action < -threshold:
+        action = -1
+    else:
+        action = 0
+    return action
 
 def main():
     from .model import Model
-    import matplotlib.pyplot as plt
 
     handle_sigint()
 
@@ -171,29 +298,12 @@ def main():
     env = TradingEnv(df, obs_size=50, render_mode="terminal")
     model = Model()
 
-    obs, _ = env.reset()
+    obs, info = env.reset()
     while True:
-        obs = obs.reshape((1, -1))
-        # print(obs)
-        action, states = model.predict(obs)
-        action = action[0]
-
-        threshold = 0  # z-score
-        if action > threshold:
-            action = 1
-        elif action < -threshold:
-            action = -1
-        else:
-            action = 0
-
-        obs, reward, terminated, truncated, _ = env.step(action)
+        action = get_action(model, obs)
+        obs, reward, terminated, truncated, info = env.step(action)
         if terminated or truncated:
             break
-
-    plt.axhline(0, color="black", lw=0.8)
-    plt.plot(env.hist)
-    plt.show()
-
     env.close()
 
 

@@ -34,6 +34,9 @@ class Simulation:
         self.summary = {"data": self.data.df, "account": self.account.stats.to_dict()}
 
 
+
+
+
 if __name__ == "__main__":
     import numpy as np
     import pandas as pd
