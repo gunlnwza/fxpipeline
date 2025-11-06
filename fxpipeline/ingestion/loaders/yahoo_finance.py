@@ -1,14 +1,10 @@
 import logging
-import warnings
-from typing import TYPE_CHECKING
+# import warnings
 
 import pandas as pd
 import yfinance as yf
 
 from .base import ForexPriceLoader, ForexPriceRequest
-
-if TYPE_CHECKING:
-    import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +19,7 @@ class YahooFinanceForex(ForexPriceLoader):
         # warnings.filterwarnings("ignore")
         df = yf.download(ticker, req.start, req.end, progress=False)
         # warnings.filterwarnings("default")
-        
+
         # df = yf.download(ticker, req.start, req.end)
 
         # clean

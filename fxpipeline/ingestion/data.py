@@ -3,12 +3,13 @@ from itertools import combinations
 from dataclasses import dataclass
 import datetime
 
-import pandas as pd
+# import pandas as pd
 
 
 # TODO[data]: would be nice to remember what exotic pairs are not available
 
-# TODO[data]: hard code pairs instead, so we can reference from dict, begin by fetching list of pairs from Polygon API
+# TODO[data]: hard code pairs instead, so we can reference from dict,
+# begin by fetching list of pairs from Polygon API
 
 # TODO[refactor]: This is smelly, make it a json file instead?
 # CURRENCY_METADATA = {
@@ -106,7 +107,7 @@ class CurrencyPair:
         return f"CurrencyPair({self.base}, {self.quote})"
 
     def __str__(self):
-        return self.ticker    
+        return self.ticker
 
 
 def make_pairs(currencies: list[str]) -> list[CurrencyPair]:
@@ -129,10 +130,10 @@ class ForexPriceRequest:
         start = self.start.strftime("%Y-%m-%d %H:%M:%S")
         end = self.end.strftime("%Y-%m-%d %H:%M:%S")
         return f"{self.pair}[{start}, {end}]"
-    
+
     def copy(self) -> "ForexPriceRequest":
         return ForexPriceRequest(self.pair, self.start, self.end)
-    
+
 
 def make_forex_price_request(ticker: str, days=365) -> ForexPriceRequest:
     today = datetime.datetime.now()

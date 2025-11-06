@@ -56,7 +56,7 @@ class CSVDatabase(ForexPriceDatabase):
         if os.path.exists(filename):
             return True
         return False
-    
+
     def is_up_to_date(self, ticker: str, buffer_days=7) -> bool:
         df = self.load(ticker)
         last_datetime = df.index[-1].to_pydatetime()
