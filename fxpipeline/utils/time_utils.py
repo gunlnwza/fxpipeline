@@ -6,15 +6,15 @@ class Stopwatch:
         self.start()
 
     def start(self):
-        self._start = time.time()
+        self._start = time.perf_counter()
         self._stop = None
 
     def stop(self):
-        self._stop = time.time()
+        self._stop = time.perf_counter()
 
     @property
     def time(self):
         if self._stop:
             return self._stop - self._start
         else:
-            return time.time() - self._start
+            return time.perf_counter() - self._start
