@@ -38,11 +38,14 @@ class Order:
     
     @property
     def profit(self):
-        price_diff = self._close_price - self._open_price
+        return self.current_profit(self._close_price)
+    
+    def current_profit(self, price):
+        price_diff = price - self._open_price
         if self._type == "sell":
             price_diff *= -1
         return price_diff
-    
+
 
 class Data:
     def __init__(self, df, obs_size):
@@ -64,13 +67,16 @@ class Data:
         return closes
 
     def get_info(self):
+        closes = self._closes[self._i - self._obs_size : self._i]
+
         info = {
             "i": self._i,
-            "closes": self._closes[self._i - self._obs_size : self._i],
+            "closes": closes,
             "total_profit": self.total_profit
         }
         if self.order:
             info["order"] = self.order.get_info()
+
         return info
 
     def step(self):
@@ -100,7 +106,7 @@ class Data:
         self.order = Order("sell", self._i, self.current_price)
 
     def close_order(self):
-        assert self.order is not None
+        assert self.order
 
         self.order.close(self._i, self.current_price)
         profit = self.order.profit
@@ -109,6 +115,10 @@ class Data:
         self.total_profit += profit
         
         return profit
+    
+    def current_profit(self):
+        assert self.order
+        return self.order.current_profit(self.current_price)
 
 
 class Renderer:
@@ -227,9 +237,12 @@ class TradingEnv(gym.Env):
         return self.data.get_info()
 
     def _interpret_action(self, action) -> float:
-        order = self.data.order
-
         reward = 0
+
+        # if self.data.order and self.data.current_profit() < -0.0100:
+        #     reward += self.data.close_order()
+
+        order = self.data.order
         if action == 1:
             if order and order._type == "sell":
                 reward += self.data.close_order()
@@ -295,7 +308,7 @@ def main():
     handle_sigint()
 
     df = load_forex_price("EURUSD")
-    env = TradingEnv(df, obs_size=50, render_mode="terminal")
+    env = TradingEnv(df, obs_size=50, render_mode="human")
     model = Model()
 
     obs, info = env.reset()
