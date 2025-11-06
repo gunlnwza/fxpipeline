@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import pytest
 
 from gymnasium import spaces
 
@@ -10,35 +9,47 @@ from fxpipeline.backtest import TradingEnv
 NOTE: does not test rendering-related features
 """
 
-rng = np.random.default_rng(seed=42)
+s  = pd.Series([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+obs_size = 5
 
-df = pd.DataFrame({
-    "close": rng.random(10)
+df_ohlc = pd.DataFrame({"open": s + 10, "high": s + 30, "low": s, "close": s + 20})
+df_close = pd.DataFrame({"close": s + 20})
 
-})
-env = TradingEnv(df, obs_size=5, render_mode=None)
+env_ohlc = TradingEnv(df_ohlc, obs_size, render_mode=None)
+env_close = TradingEnv(df_close, obs_size, render_mode=None)
 
 
 def test_action_space():
-    assert env.action_space == spaces.Discrete(3, start=-1)
+    """{Buy, Hold, Sell} is already a good design decision"""
+    assert env_ohlc.action_space == spaces.Discrete(3, start=-1)
 
 
 def test_observation_space():
     """Must infer shape from passed df"""
-    pass
-
-
-def test_get_observation():
-    pass
-
-
-def test_get_info():
-    pass
-
-
-def test_step():
-    pass
+    assert env_ohlc.observation_space == spaces.Box(-np.inf, np.inf, (4, obs_size), np.float32)
+    assert env_close.observation_space == spaces.Box(-np.inf, np.inf, (1, obs_size), np.float32)
 
 
 def test_reset():
-    pass
+    observation, info = env_ohlc.reset()
+    assert isinstance(observation, np.array)
+    assert isinstance(info, dict)
+
+
+def test_step():
+    observation, reward, terminated, truncated, info = env_ohlc.step(0)
+    assert isinstance(observation, np.array)
+    assert reward == 0
+    assert terminated is False
+    assert truncated is False
+    assert isinstance(info, dict)
+
+
+def test_buy():
+    for _ in range(3):
+        observation, reward, terminated, truncated, info = env_ohlc.step(1)
+        assert reward == 0
+
+    observation, reward, terminated, truncated, info = env_ohlc.step(0)
+    assert reward == 3
+    assert truncated is True

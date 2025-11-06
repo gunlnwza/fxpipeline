@@ -1,48 +1,90 @@
-import pytest
+import numpy as np
+import pandas as pd
+
+from fxpipeline.backtest.data import Data, Order
+
+s  = pd.Series([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+obs_size = 5
+
+df_ohlc = pd.DataFrame({"open": s + 10, "high": s + 30, "low": s, "close": s + 20})
+data = Data(df_ohlc, obs_size)
 
 
-# general
 def test_get_observation():
-    pass
+    observation = data.get_observation()
+    expected_obs = np.array([
+        [10, 11, 12, 13, 14],
+        [30, 31, 32, 33, 34],
+        [ 0,  1,  2,  3,  4],
+        [20, 21, 22, 23, 24],
+    ], dtype=np.float32)
+    np.testing.assert_array_equal(observation, expected_obs)
 
 
 def test_get_info():
-    pass
+    info = data.get_info()
+    assert isinstance(info, dict)
 
 
 def test_step():
-    pass
+    data.step()
+
+    observation = data.get_observation()
+    expected_obs = np.array([
+        [11, 12, 13, 14, 15],
+        [31, 32, 33, 34, 35],
+        [ 1,  2,  3,  4,  5],
+        [21, 22, 23, 24, 25],
+    ], dtype=np.float32)
+    np.testing.assert_array_equal(observation, expected_obs)
 
 
 def test_reset():
-    pass
+    data.reset()
+
+    observation = data.get_observation()
+    expected_obs = np.array([
+        [10, 11, 12, 13, 14],
+        [30, 31, 32, 33, 34],
+        [ 0,  1,  2,  3,  4],
+        [20, 21, 22, 23, 24],
+    ], dtype=np.float32)
+    np.testing.assert_array_equal(observation, expected_obs)
 
 
-def test_is_terminated():
-    pass
+def test_is_done_check():
+    data.reset()
+
+    for i in range(5):
+        assert not data.terminated and not data.truncated
+        data.step()
+
+    assert not data.terminated and data.truncated
 
 
-def test_is_truncated():
-    pass
+def test_buy_order():
+    data.reset()
+
+    data.buy()
+    assert data.order == Order("buy", 0, 20)
+    assert data.current_profit() == 0
+
+    data.step()
+
+    profit = data.close_order()
+    assert profit == 1
+    assert data.order is None
 
 
-# states
-def test_current_price():
-    pass
+def test_sell_order():
+    data.reset()
 
+    data.sell()
+    assert data.order == Order("sell", 0, 20)
+    assert data.current_profit() == 0
 
-# Order
-def test_buy():
-    pass
+    data.step()
 
-
-def test_sell():
-    pass
-
-
-def test_close_order():
-    pass
-
-
-def test_current_profit():
-    pass
+    profit = data.close_order()
+    assert profit == -1
+    assert data.order is None

@@ -22,7 +22,7 @@ class TradingEnv(gym.Env):
 
     def __init__(self, df: pd.DataFrame, obs_size: int = 10, render_mode: Optional[str] = None):
         self.action_space = self._build_action_space()
-        self.observation_space = self._build_observation_space((1, obs_size))
+        self.observation_space = self._build_observation_space(df, obs_size)
 
         self.data = Data(df, obs_size)
         self.renderer = self._build_renderer(render_mode)
@@ -30,7 +30,8 @@ class TradingEnv(gym.Env):
     def _build_action_space(self):
         return spaces.Discrete(3, start=-1)
 
-    def _build_observation_space(self, shape):
+    def _build_observation_space(self, df, obs_size):
+        shape = (len(df.columns), obs_size)
         return spaces.Box(-np.inf, np.inf, shape, np.float32)
 
     def _build_renderer(self, render_mode):
