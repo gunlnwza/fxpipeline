@@ -23,4 +23,4 @@ class Model:
 
     def predict(self, X):
         y_pred = self._model.predict(X)
-        return y_pred, {}
+        return y_pred

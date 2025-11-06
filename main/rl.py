@@ -7,7 +7,7 @@ from fxpipeline.strategy import Model
 # TODO: This has to go, make wrappers instead
 def get_action(model, obs):
     obs = obs.reshape((1, -1))
-    action, states = model.predict(obs)
+    action = model.predict(obs)
     action = action[0]
 
     threshold = 1  # z-score

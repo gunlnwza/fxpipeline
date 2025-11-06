@@ -1,6 +1,7 @@
 import logging
+import argparse
 
-from fxpipeline.ingestion import fetch_forex_price, load_forex_price
+from fxpipeline.ingestion import fetch_forex_price
 from fxpipeline.utils import handle_sigint
 
 logger = logging.getLogger(__name__)
@@ -30,11 +31,12 @@ def main():
     handle_sigint()
     config_logging()
 
-    # pairs = make_pairs(MAJOR_CURRENCIES)
-    # pairs = make_pairs(["EUR", "USD"])
-    # for pair in pairs:
-        # fetch_forex_price(pair.ticker, "yahoo_finance", 1500)
-    fetch_forex_price("GBPAUD", 100)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("ticker")
+    parser.add_argument("days", type=int, default=100)
+    args = parser.parse_args()
+
+    fetch_forex_price(args.ticker, args.days)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ from fxpipeline.utils import Stopwatch
 
 
 def evaluate_performance(y_test, y_pred):
+    print(len(y_test), len(y_pred))
     df = pd.DataFrame({
         "y_test": y_test,
         "y_pred": y_pred

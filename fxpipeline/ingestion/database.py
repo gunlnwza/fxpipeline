@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 
-from ..core import ForexPriceRequest
+from .data import ForexPriceRequest
 
 logger = logging.getLogger(__name__)
 
