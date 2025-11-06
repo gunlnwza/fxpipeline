@@ -1,34 +1,12 @@
-import os
-
 import pandas as pd
 import numpy as np
 
-import joblib
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import TimeSeriesSplit
 
-from .fxpipeline.data import load_forex_price
-
-
-class Model:
-    def __init__(self):
-        self._filename = "baseline.joblib"
-        if os.path.exists(self._filename):
-            self._model = joblib.load(self._filename)
-            self._trained = True
-        else:
-            self._model = RandomForestRegressor(random_state=42)
-            self._trained = False
-
-    def fit(self, X_train, y_train):
-        assert self._trained == False
-        self._model.fit(X_train, y_train)
-        self._trained = True
-        joblib.dump(self._model, self._filename)
-        print(f"Save model to '{self._filename}'")
-
-    def predict(self, X):
-        y_pred = self._model.predict(X)
-        return y_pred, {}
+from fxpipeline.ingestion import load_forex_price
+from fxpipeline.preprocessing import preprocess
+from fxpipeline.strategy import Model
+from fxpipeline.utils import Stopwatch
 
 
 def evaluate_performance(y_test, y_pred):
@@ -55,11 +33,6 @@ def evaluate_performance(y_test, y_pred):
 
 
 def main():
-    from sklearn.model_selection import TimeSeriesSplit
-
-    from .fxpipeline.utils import Stopwatch
-    from .fxpipeline.preprocessing.normalize import preprocess
-
     # NOTE: What if we predict Low and High, and let the model do the buy-low-sell-high strategy?
     # Would need two timeframes, big and small
     # - predict bounds on big timeframe
@@ -99,3 +72,7 @@ def main():
         sw.stop()
         print(f"Time elapse: {sw.time:.3f}s")
         print("-" * 80)
+
+
+if __name__ == "__main__":
+    main()
