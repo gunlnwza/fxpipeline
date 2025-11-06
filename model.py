@@ -6,7 +6,7 @@ import numpy as np
 import joblib
 from sklearn.ensemble import RandomForestRegressor
 
-from ..data import load_forex_price
+from .fxpipeline.data import load_forex_price
 
 
 class Model:
@@ -57,8 +57,8 @@ def evaluate_performance(y_test, y_pred):
 def main():
     from sklearn.model_selection import TimeSeriesSplit
 
-    from ..utils import Stopwatch
-    from ..preprocessing.normalize import preprocess
+    from .fxpipeline.utils import Stopwatch
+    from .fxpipeline.preprocessing.normalize import preprocess
 
     # NOTE: What if we predict Low and High, and let the model do the buy-low-sell-high strategy?
     # Would need two timeframes, big and small

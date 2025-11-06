@@ -303,7 +303,7 @@ def get_action(model, obs):
     return action
 
 def main():
-    from .model import Model
+    from ...model import Model
 
     handle_sigint()
 
