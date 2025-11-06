@@ -20,10 +20,10 @@ def test_stopwatch():
     assert sw.time - 0.005 <= tol
 
     sw.start()
-    time.sleep(0.05)
-    assert sw.time - 0.05 <= tol
+    time.sleep(0.050)
+    assert sw.time - 0.050 <= tol
 
     sw.start()
-    time.sleep(0.5)
+    time.sleep(0.100)
     sw.stop()
-    assert sw.time - 0.5 <= tol
+    assert sw.time - 0.100 <= tol
