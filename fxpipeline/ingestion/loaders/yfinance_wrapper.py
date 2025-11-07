@@ -9,7 +9,7 @@ from .base import ForexPriceLoader, ForexPriceRequest
 logger = logging.getLogger(__name__)
 
 
-class YahooFinanceForex(ForexPriceLoader):
+class YFinanceForex(ForexPriceLoader):
     def __init__(self, path):
         super().__init__(path, None)
 

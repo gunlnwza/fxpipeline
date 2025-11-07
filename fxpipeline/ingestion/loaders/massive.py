@@ -8,7 +8,7 @@ from .base import ForexPriceLoader, ForexPriceRequest
 logger = logging.getLogger(__name__)
 
 
-class PolygonForex(ForexPriceLoader):
+class MassiveForex(ForexPriceLoader):
     def __init__(self, path, api_key):
         super().__init__(path, api_key)
 

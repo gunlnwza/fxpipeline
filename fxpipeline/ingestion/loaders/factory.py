@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 
 from .base import ForexPriceLoader
 from .alpha_vantage import AlphaVantageForex
-from .polygon import PolygonForex
-from .yahoo_finance import YahooFinanceForex
+from .massive import MassiveForex
+from .yfinance_wrapper import YFinanceForex
 
 load_dotenv()
 
@@ -16,11 +16,11 @@ LOADERS = {
         f"{CACHES_PATH}/.alpha_vantage_cache",
         os.getenv("ALPHA_VANTAGE_API_KEY")
     ),
-    "polygon": PolygonForex(
+    "massive": MassiveForex(
         f"{CACHES_PATH}/.polygon_cache",
         os.getenv("POLYGON_API_KEY")
     ),
-    "yahoo_finance": YahooFinanceForex(
+    "yfinance": YFinanceForex(
         f"{CACHES_PATH}/.yahoo_finance_cache"
     )
 }
