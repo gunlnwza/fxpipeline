@@ -26,7 +26,7 @@ LOADERS = {
 }
 
 
-def get_loader(source: str = "yahoo_finance") -> ForexPriceLoader:
+def get_loader(source: str) -> ForexPriceLoader:
     """Factory method for loaders"""
     if source not in LOADERS:
         raise ValueError(f"{source} is not a supported loader")
