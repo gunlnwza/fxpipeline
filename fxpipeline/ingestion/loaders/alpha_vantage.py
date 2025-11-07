@@ -15,6 +15,16 @@ class AlphaVantageForex(ForexPriceLoader):
     def __init__(self, api_key):
         super().__init__(api_key)
 
+    @staticmethod
+    def _should_download_full(req: ForexPriceRequest):
+        business_day = np.busday_count(req.start.date(), req.end.date() + datetime.timedelta(1))
+        return business_day >= 100
+
+    @staticmethod
+    def _clean(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.sort_index()
+        return df
+
     def download(self, req: ForexPriceRequest) -> pd.DataFrame:
         """
         download price from Alpha Vantage
@@ -33,15 +43,13 @@ class AlphaVantageForex(ForexPriceLoader):
 
         NOTE: 4H is not supported by the API
         """
-        business_day = np.busday_count(req.start.date(), req.end.date() + datetime.timedelta(1))
-        download_full = business_day >= 100
         params = {
             "apikey": self.api_key,
             "from_symbol": req.pair.base,
             "to_symbol": req.pair.quote,
             "function": "FX_DAILY",
             "datatype": "csv",
-            "outputsize": "full" if download_full else "compact"
+            "outputsize": "full" if self._should_download_full(req) else "compact"
         }
         logger.debug("Alpha Vantage, downloading with option: " + params["outputsize"])
 
@@ -56,5 +64,4 @@ class AlphaVantageForex(ForexPriceLoader):
             raise APIError(f"Alpha Vantage API error: {msg}")
 
         df = pd.read_csv(StringIO(res.text), index_col="timestamp", parse_dates=True)
-        df = df.sort_index()
         return df

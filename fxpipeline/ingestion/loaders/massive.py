@@ -14,22 +14,24 @@ class MassiveForex(ForexPriceLoader):
     def __init__(self, api_key):
         super().__init__(api_key)
 
-    def download(self, req: ForexPriceRequest) -> pd.DataFrame:
-        # download
-        aggs = []
-        client = RESTClient(self.api_key)
-        for a in client.list_aggs(
-            f"C:{req.pair}", 1, "day", req.start, req.end,
-            adjusted="true", sort="asc"
-        ):
-            aggs.append(a)
-        if not aggs:
-            return None
-
-        # clean
-        df = pd.DataFrame(aggs)
+    @staticmethod
+    def _clean(df: pd.DataFrame) -> pd.DataFrame:
         df.index = pd.to_datetime(df["timestamp"], unit="ms")
         for name in ("timestamp", "transactions", "otc"):
             df.drop(name, axis=1, inplace=True)
+        return df
 
+    def download(self, req: ForexPriceRequest) -> pd.DataFrame:
+        aggs = []
+        client = RESTClient(self.api_key)
+        for a in client.list_aggs(
+            f"C:{req.pair}", 1, "day", req.start, req.end, adjusted="true", sort="asc"
+        ):
+            aggs.append(a)
+
+        if not aggs:
+            return None
+
+        df = pd.DataFrame(aggs)
+        df = self._clean(df)
         return df
