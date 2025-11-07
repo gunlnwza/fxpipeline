@@ -16,10 +16,11 @@ data = Data(df_ohlc, obs_size)
 def test_get_observation():
     observation = data.get_observation()
     expected_obs = np.array([
-        [10, 11, 12, 13, 14],
-        [30, 31, 32, 33, 34],
-        [ 0,  1,  2,  3,  4],
-        [20, 21, 22, 23, 24],
+        [10, 30, 0, 20],
+        [11, 31, 1, 21],
+        [12, 32, 2, 22],
+        [13, 33, 3, 23],
+        [14, 34, 4, 24],
     ], dtype=np.float32)
     np.testing.assert_array_equal(observation, expected_obs)
 
@@ -34,10 +35,11 @@ def test_step():
 
     observation = data.get_observation()
     expected_obs = np.array([
-        [11, 12, 13, 14, 15],
-        [31, 32, 33, 34, 35],
-        [ 1,  2,  3,  4,  5],
-        [21, 22, 23, 24, 25],
+        [11, 31, 1, 21],
+        [12, 32, 2, 22],
+        [13, 33, 3, 23],
+        [14, 34, 4, 24],
+        [15, 35, 5, 25]
     ], dtype=np.float32)
     np.testing.assert_array_equal(observation, expected_obs)
 
@@ -49,10 +51,11 @@ def test_reset():
 
     observation = data.get_observation()
     expected_obs = np.array([
-        [10, 11, 12, 13, 14],
-        [30, 31, 32, 33, 34],
-        [ 0,  1,  2,  3,  4],
-        [20, 21, 22, 23, 24],
+        [10, 30, 0, 20],
+        [11, 31, 1, 21],
+        [12, 32, 2, 22],
+        [13, 33, 3, 23],
+        [14, 34, 4, 24],
     ], dtype=np.float32)
     np.testing.assert_array_equal(observation, expected_obs)
 
@@ -62,10 +65,11 @@ def test_reset():
 def test_is_done_check():
     data.reset()
 
-    for i in range(5):
-        assert not data.terminated and not data.truncated
+    for i in range(4):
         data.step()
+        assert not data.terminated and not data.truncated
 
+    data.step()  # truncated at the 5th time
     assert not data.terminated and data.truncated
 
 

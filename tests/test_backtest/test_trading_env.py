@@ -54,44 +54,57 @@ def test_step():
 def test_buy():
     env_ohlc.reset()
 
-    for _ in range(5):
+    for _ in range(4):
         observation, reward, terminated, truncated, info = env_ohlc.step(1)
         assert truncated is False
         assert reward == 0
 
-    observation, reward, terminated, truncated, info = env_ohlc.step(0)
-    assert reward == 5
+    observation, reward, terminated, truncated, info = env_ohlc.step(1)
+    assert reward == 0  # do not force-liquidate
     assert truncated is True
 
 
 def test_sell():
     env_ohlc.reset()
 
-    for _ in range(5):
+    for _ in range(4):
         observation, reward, terminated, truncated, info = env_ohlc.step(-1)
         assert truncated is False
         assert reward == 0
 
-    observation, reward, terminated, truncated, info = env_ohlc.step(0)
-    assert reward == -5
+    observation, reward, terminated, truncated, info = env_ohlc.step(-1)
+    assert reward == 0  # do not force-liquidate
     assert truncated is True
 
 
 def test_open_then_close():
+    # buy
     for action in (0, -1):
         env_ohlc.reset()
+
         observation, reward, terminated, truncated, info = env_ohlc.step(1)
         assert env_ohlc.data.order == Order("buy", 5, 24)
         assert reward == 0
+
         observation, reward, terminated, truncated, info = env_ohlc.step(action)
         assert env_ohlc.data.order is None
         assert reward == 1
 
+    # sell
     for action in (0, 1):
         env_ohlc.reset()
+
         observation, reward, terminated, truncated, info = env_ohlc.step(-1)
         assert env_ohlc.data.order == Order("sell", 5, 24)
         assert reward == 0
+
         observation, reward, terminated, truncated, info = env_ohlc.step(action)
         assert env_ohlc.data.order is None
         assert reward == -1
+
+
+def test_truncated():
+    for _ in range(42):
+        observation, reward, terminated, truncated, info = env_ohlc.step(0)
+        if truncated:
+            break

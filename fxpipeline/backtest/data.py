@@ -67,7 +67,7 @@ class Data:
         self.total_profit = 0
 
     def get_observation(self):
-        return self._arr[self._i - self._obs_size:self._i].transpose()
+        return self._arr[self._i - self._obs_size:self._i]
 
     def get_info(self):
         info = {
@@ -79,8 +79,8 @@ class Data:
         return info
 
     def step(self):
-        if not self.terminated and not self.truncated:
-            self._i += 1
+        assert not self.terminated and not self.truncated
+        self._i += 1
 
     def reset(self):
         self._i = self._obs_size
