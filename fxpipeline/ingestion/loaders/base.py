@@ -14,8 +14,7 @@ class APIError(Exception):
 
 
 class ForexPriceLoader(ABC):
-    def __init__(self, path: str, api_key: str):
-        self.path = path
+    def __init__(self, api_key: str):
         self.api_key = api_key
 
     @abstractmethod

@@ -9,8 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 class MassiveForex(ForexPriceLoader):
-    def __init__(self, path, api_key):
-        super().__init__(path, api_key)
+    """Polygon rebranded themselves as Massive"""
+
+    def __init__(self, api_key):
+        super().__init__(api_key)
 
     def download(self, req: ForexPriceRequest) -> pd.DataFrame:
         # download
