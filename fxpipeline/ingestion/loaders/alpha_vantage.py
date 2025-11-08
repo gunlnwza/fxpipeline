@@ -64,6 +64,5 @@ class AlphaVantageForex(ForexPriceLoader):
             raise APIError(f"Alpha Vantage API error: {msg}")
 
         df = pd.read_csv(StringIO(res.text), index_col="timestamp", parse_dates=True)
-        print(df)
-
+        df = self._clean(df)
         return df
