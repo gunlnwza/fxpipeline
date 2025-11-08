@@ -41,7 +41,7 @@ def _fetch(req: ForexPriceRequest, source: str) -> bool:
                 return False
             database.save(df, req.pair.ticker)
             return True
-    
+
         last_datetime = old_df.index[-1].to_pydatetime()
         req = ForexPriceRequest(req.pair, last_datetime, req.end)
         df = _download(loader, req)

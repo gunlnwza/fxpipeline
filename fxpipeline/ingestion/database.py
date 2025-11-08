@@ -1,13 +1,10 @@
 import os
 import logging
 import datetime
-from pathlib import Path
 from abc import ABC, abstractmethod
 
 import pandas as pd
 from dotenv import load_dotenv
-
-from .data import ForexPriceRequest
 
 logger = logging.getLogger(__name__)
 
