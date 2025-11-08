@@ -13,11 +13,16 @@ class APIError(Exception):
         super().__init__(message)
 
 
+class NotDownloadedError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
 class ForexPriceLoader(ABC):
     def __init__(self, api_key: str):
         self.api_key = api_key
 
     @abstractmethod
     def download(req: ForexPriceRequest) -> pd.DataFrame:
-        """Download forex data from internet, can raise APIError"""
+        """Download forex data from internet, can Errors"""
         pass

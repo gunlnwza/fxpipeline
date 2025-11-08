@@ -5,7 +5,7 @@ import requests
 import numpy as np
 import pandas as pd
 
-from .base import ForexPriceLoader, APIError, ForexPriceRequest
+from .base import ForexPriceLoader, APIError, NotDownloadedError, ForexPriceRequest
 
 logger = logging.getLogger(__name__)
 
@@ -50,12 +50,11 @@ class AlphaVantageForex(ForexPriceLoader):
             "datatype": "csv",
             "outputsize": "full" if self._should_download_full(req) else "compact"
         }
-        logger.debug("Alpha Vantage, downloading with option: " + params["outputsize"])
-
         res = requests.get("https://www.alphavantage.co/query", params, timeout=10)
         if not res.ok:
-            logger.error(f"HTTP {res.status_code} — cannot download {req}")
-            return None
+            raise NotDownloadedError(
+                f"Alpha Vantage: HTTP {res.status_code} — cannot download {req}"
+                )
 
         content_type = res.headers.get("Content-Type", "")
         if content_type and "json" in content_type.lower():

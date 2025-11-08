@@ -3,7 +3,7 @@ import pandas as pd
 
 from polygon import RESTClient
 
-from .base import ForexPriceLoader, ForexPriceRequest
+from .base import ForexPriceLoader, ForexPriceRequest, NotDownloadedError
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class MassiveForex(ForexPriceLoader):
             aggs.append(a)
 
         if not aggs:
-            return None
+            raise NotDownloadedError("Massive: data is not downloaded")
 
         df = pd.DataFrame(aggs)
         df = self._clean(df)
