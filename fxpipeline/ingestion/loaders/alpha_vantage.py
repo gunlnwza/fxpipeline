@@ -1,5 +1,4 @@
 import logging
-import datetime
 from io import StringIO
 import requests
 
@@ -17,7 +16,7 @@ class AlphaVantageForex(ForexPriceLoader):
 
     @staticmethod
     def _should_download_full(req: ForexPriceRequest):
-        business_day = np.busday_count(req.start.date(), req.end.date() + datetime.timedelta(1))
+        business_day = np.busday_count(req.start.date(), req.end.date() + pd.Timedelta(days=1))
         return business_day >= 100
 
     @staticmethod

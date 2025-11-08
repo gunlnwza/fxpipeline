@@ -1,7 +1,7 @@
 from itertools import combinations
-
 from dataclasses import dataclass
-import datetime
+
+import pandas as pd
 
 # import pandas as pd
 
@@ -49,9 +49,7 @@ EUROPEAN_CURRENCIES = ["EUR", "GBP", "CHF", "SEK", "NOK", "PLN", "CZK"]
 
 
 def get_currencies_by_group(name: str):
-    """
-    name = major, minor, exotic, g10, emerging_market, asian, european
-    """
+    """name = major, minor, exotic, g10, emerging_market, asian, european"""
     match name:
         case "major": return MAJOR_CURRENCIES
         case "minor": return MINOR_CURRENCIES
@@ -117,8 +115,8 @@ def make_pairs(currencies: list[str]) -> list[CurrencyPair]:
 @dataclass
 class ForexPriceRequest:
     pair: CurrencyPair
-    start: datetime.datetime
-    end: datetime.datetime
+    start: pd.Timestamp
+    end: pd.Timestamp
     tf_length: int = 1
     tf_unit: str = "day"  # minute, day, week, month
 
@@ -136,6 +134,6 @@ class ForexPriceRequest:
 
 
 def make_forex_price_request(ticker: str, days=365) -> ForexPriceRequest:
-    today = datetime.datetime.now()
-    start = today - datetime.timedelta(days)
+    today = pd.Timestamp.now()
+    start = today - pd.Timedelta(days=days)
     return ForexPriceRequest(CurrencyPair(ticker), start, today)

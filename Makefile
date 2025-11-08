@@ -4,4 +4,7 @@ lint:
 test:
 	PYTHONPATH=. pytest
 
-.PHONY: lint test
+count:
+	find fxpipeline main tests -name '*.py' -exec wc -l {} +
+
+.PHONY: lint test count

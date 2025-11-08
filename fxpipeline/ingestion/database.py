@@ -1,6 +1,5 @@
 import os
 import logging
-import datetime
 from abc import ABC, abstractmethod
 
 import pandas as pd
@@ -64,8 +63,8 @@ class CSVDatabase(ForexPriceDatabase):
         if len(df) == 0:
             return False
         last_datetime = df.index[-1].to_pydatetime()
-        cur_datetime = datetime.datetime.now()
-        max_lag = datetime.timedelta(buffer_days)
+        cur_datetime = pd.Timestamp.now()
+        max_lag = pd.Timedelta(days=buffer_days)
         return cur_datetime - last_datetime <= max_lag
 
 

@@ -1,6 +1,5 @@
 import logging
 import time
-import datetime
 
 import pandas as pd
 from urllib3.exceptions import MaxRetryError
@@ -76,7 +75,7 @@ def _fetch_with_retries(req: ForexPriceRequest, source: str, retries=5, max_retr
 
 
 def fetch_forex_price(ticker: str, days: int, source: str):
-    now = datetime.datetime.now()
-    start = now - datetime.timedelta(days)
+    now = pd.Timestamp.now()
+    start = now - pd.Timedelta(days=days)
     req = ForexPriceRequest(CurrencyPair(ticker), start, now)
     _fetch_with_retries(req, source)
