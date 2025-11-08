@@ -1,4 +1,22 @@
 # =====================================
+# Data & Cache
+# =====================================
+.fxpipeline_cache/
+
+*.zip
+*.csv
+*.tsv
+*.json
+*.log
+*.txt
+*.db
+*.sqlite3
+*.h5
+*.feather
+*.parquet
+*.joblib
+
+# =====================================
 # Python
 # =====================================
 __pycache__/
@@ -18,30 +36,14 @@ htmlcov/
 .mypy_cache/
 .dmypy.json
 
+!requirements*.txt
+
 # =====================================
 # Jupyter Notebooks
 # =====================================
 notebooks/
 *.ipynb
 .ipynb_checkpoints/
-
-# =====================================
-# Data & Cache
-# =====================================
-.fxpipeline_cache/
-
-*.zip
-*.csv
-*.tsv
-*.json
-*.log
-*.txt
-*.db
-*.sqlite3
-*.h5
-*.feather
-*.parquet
-*.joblib
 
 # =====================================
 # Output Files
