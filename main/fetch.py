@@ -10,10 +10,9 @@ logger = logging.getLogger(__name__)
 def config_logging():
     logging.basicConfig(
         level=logging.DEBUG,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        handlers=[
-            logging.StreamHandler()
-        ]
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt='%Y-%m-%d %H:%M:%S',
+        handlers=[logging.StreamHandler()]
     )
 
     logging_levels = {
@@ -33,8 +32,8 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("tickers", nargs="+")
-    parser.add_argument("--days", type=int, default=100)
-    parser.add_argument("--source", default="yfinance")
+    parser.add_argument("-d", "--days", type=int, default=100)
+    parser.add_argument("-s", "--source", default="yfinance")
     args = parser.parse_args()
 
     for ticker in args.tickers:

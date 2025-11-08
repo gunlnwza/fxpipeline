@@ -22,6 +22,8 @@ class MassiveForex(ForexPriceLoader):
         return df
 
     def download(self, req: ForexPriceRequest) -> pd.DataFrame:
+        logger.info(f"Downloading '{req} with Massive API")
+
         aggs = []
         client = RESTClient(self.api_key)
         for a in client.list_aggs(

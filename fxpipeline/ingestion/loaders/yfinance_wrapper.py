@@ -1,5 +1,5 @@
 import logging
-# import warnings
+import warnings
 
 import pandas as pd
 import yfinance as yf
@@ -24,10 +24,12 @@ class YFinanceForex(ForexPriceLoader):
         return df
 
     def download(self, req: ForexPriceRequest) -> pd.DataFrame:
-        # warnings.filterwarnings("ignore")  # yfinance's peewee might forget to close db
-        ticker = f"{req.ticker}=X"
-        df = yf.download(ticker, req.start, req.end, progress=False)
-        # warnings.filterwarnings("default")
+        logger.info(f"Downloading '{req}' with yfinance")
+
+        warnings.filterwarnings("ignore")  # NOTE: yfinance's peewee might forget to close db
+        df = yf.download(f"{req.ticker}=X", req.start, req.end, progress=False)
+        warnings.filterwarnings("default")
+
         df = self._clean(df)
         return df
 

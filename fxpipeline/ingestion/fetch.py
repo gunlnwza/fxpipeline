@@ -15,27 +15,31 @@ logger = logging.getLogger(__name__)
 
 def _fetch(req: ForexPriceRequest, source: str) -> bool:
     """Fetch one time. Updating the cache"""
+    t = req.ticker
     loader = get_loader(source)
     database = get_database(source)
 
-    if database.is_up_to_date(req.ticker, buffer_days=7):
-        logger.info(f"{req.ticker} is up to date.")
+    if database.is_up_to_date(t, buffer_days=7):
+        logger.info(f"{t} is up to date.")
         return
 
-    old_df = database.load(req.ticker) if database.have(req.ticker) else None
+    old_df = database.load(t) if database.have(t) else None
     if old_df is None or len(old_df) == 0:
         df = loader.download(req)
         logger.info(f"Download data for '{req}'")
-        database.save(df, req.ticker)
+        database.save(df, t)
         return
 
     last_datetime = old_df.index[-1].to_pydatetime()
     req = ForexPriceRequest(req.pair, last_datetime, req.end)
     df = loader.download(req)
+    logger.info(f"Download data for '{req}'")
+
     df = pd.concat([old_df, df], ignore_index=False)
     df = df[~df.index.duplicated(keep="last")]
-    database.save(df, req.ticker)
-    logger.info(f"Update data for '{req}'")
+    logger.info(f"Update data for '{t}'")
+
+    database.save(df, t)
 
 
 def _fetch_with_retries(req: ForexPriceRequest, source: str, retries=5, max_retry_wait=30) -> bool:
