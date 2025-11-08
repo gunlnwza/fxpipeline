@@ -25,7 +25,8 @@ class YFinanceForex(ForexPriceLoader):
 
     def download(self, req: ForexPriceRequest) -> pd.DataFrame:
         # warnings.filterwarnings("ignore")  # yfinance's peewee might forget to close db
-        df = yf.download(req.ticker, req.start, req.end, progress=False)
+        ticker = f"{req.ticker}=X"
+        df = yf.download(ticker, req.start, req.end, progress=False)
         # warnings.filterwarnings("default")
         df = self._clean(df)
         return df

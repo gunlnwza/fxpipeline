@@ -32,11 +32,13 @@ def main():
     config_logging()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("ticker")
-    parser.add_argument("days", type=int, default=100)
+    parser.add_argument("tickers", nargs="+")
+    parser.add_argument("--days", type=int, default=100)
+    parser.add_argument("--source", default="yfinance")
     args = parser.parse_args()
 
-    fetch_forex_price(args.ticker, args.days)
+    for ticker in args.tickers:
+        fetch_forex_price(ticker, args.days, args.source)
 
 
 if __name__ == "__main__":

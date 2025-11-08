@@ -28,9 +28,8 @@ notebooks/
 # =====================================
 # Data & Cache
 # =====================================
-.cache/
-test_cache/
-.test_cache/
+.fxpipeline_cache/
+
 *.zip
 *.csv
 *.tsv

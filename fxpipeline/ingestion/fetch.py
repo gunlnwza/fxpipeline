@@ -14,6 +14,15 @@ from .data import ForexPriceRequest, CurrencyPair
 logger = logging.getLogger(__name__)
 
 
+def _download(loader, req: ForexPriceRequest):
+    df = loader.download(req)
+    if df is None:
+        logger.warning(f"{req} is not downloaded.")
+        return None
+    logger.info(f"Load data for '{req}'")
+    return df
+
+
 def _fetch(req: ForexPriceRequest, source: str) -> bool:
     """Fetch one time. Updating the cache"""
     loader = get_loader(source)
@@ -23,26 +32,31 @@ def _fetch(req: ForexPriceRequest, source: str) -> bool:
         logger.info(f"{req.ticker} is up to date.")
         return True
 
-    if database.have(req):
+    # TODO[refactor]
+    if database.have(req.ticker):
         old_df = database.load(req.pair.ticker)
+        if len(old_df) == 0:
+            df = _download(loader, req)
+            if df is None:
+                return False
+            database.save(df, req.pair.ticker)
+            return True
+    
         last_datetime = old_df.index[-1].to_pydatetime()
         req = ForexPriceRequest(req.pair, last_datetime, req.end)
-        df = loader.download(req)
+        df = _download(loader, req)
         if df is None:
-            logger.warning(f"{req} is not downloaded.")
             return False
         df = pd.concat([old_df, df], ignore_index=False)
         df = df[~df.index.duplicated(keep="last")]
         logger.info(f"Update data for '{req}'")
+        return True
     else:
-        df = loader.download(req)
+        df = _download(loader, req)
         if df is None:
-            logger.warning(f"{req} is not downloaded.")
             return False
-        logger.info(f"Load new data for '{req}'")
-
-    database.save(df, req.pair.ticker)
-    return True
+        database.save(df, req.pair.ticker)
+        return True
 
 
 def _fetch_with_retries(req: ForexPriceRequest, source: str, retries=5, max_retry_wait=30) -> bool:
@@ -61,7 +75,7 @@ def _fetch_with_retries(req: ForexPriceRequest, source: str, retries=5, max_retr
     return False
 
 
-def fetch_forex_price(ticker: str, days: int = 100, source: str = "alpha_vantage"):
+def fetch_forex_price(ticker: str, days: int, source: str):
     now = datetime.datetime.now()
     start = now - datetime.timedelta(days)
     req = ForexPriceRequest(CurrencyPair(ticker), start, now)

@@ -5,6 +5,7 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 
 import pandas as pd
+from dotenv import load_dotenv
 
 from .data import ForexPriceRequest
 
@@ -51,24 +52,33 @@ class CSVDatabase(ForexPriceDatabase):
         filename = f"{self.path}/{ticker}.csv"
         return pd.read_csv(filename, index_col="timestamp", parse_dates=True)
 
-    def have(self, req: ForexPriceRequest) -> bool:
-        filename = f"{self.path}/{req.pair}.csv"
+    def have(self, ticker: str) -> bool:  # TODO: responsibility is weird
+        filename = f"{self.path}/{ticker}.csv"
         if os.path.exists(filename):
             return True
         return False
 
     def is_up_to_date(self, ticker: str, buffer_days=7) -> bool:
+        # This is expensive
+        # TODO[optimize]: Add json metadata
+        if not self.have(ticker):
+            return False
         df = self.load(ticker)
+        if len(df) == 0:
+            return False
         last_datetime = df.index[-1].to_pydatetime()
-        return last_datetime + datetime.timedelta(buffer_days) >= datetime.datetime.now()
-
-
-def get_database(source: str = "alpha_vantage", method: str = "csv"):
-    CACHES_PATH = Path(__file__).parent.absolute()
-    path = f"{CACHES_PATH}/.{source}_cache"
-    return CSVDatabase(path)
+        cur_datetime = datetime.datetime.now()
+        max_lag = datetime.timedelta(buffer_days)
+        return cur_datetime - last_datetime <= max_lag
 
 
 class ParquetDatabase(ForexPriceDatabase):
     def __init__(self):
         super().__init__()
+
+
+def get_database(source: str = "alpha_vantage", method: str = "csv"):
+    load_dotenv()
+    CACHES_PATH = os.getenv("CACHES_PATH")
+    path = f"{CACHES_PATH}/.{source}_cache"
+    return CSVDatabase(path)
