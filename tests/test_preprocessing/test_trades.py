@@ -2,49 +2,67 @@ import numpy as np
 
 from fxpipeline.preprocessing.trades import should_enter
 
-T = 1
-N = 1000
-deltatime = T / N
-t = np.full(N, deltatime).cumsum()
+
+def _make_lines(points: list[tuple[int, int]], n_points: int | None = None) -> np.ndarray:
+    xs, ys = zip(*points)
+    if n_points is None:
+        n_points = int(xs[-1]) + 1
+    x_full = np.linspace(xs[0], xs[-1], n_points)
+    y_full = np.interp(x_full, xs, ys)
+    return y_full
 
 
-def test_clear_win():
-    diff = 1000 * t
-    enter = should_enter(diff)
-    assert enter is True
+def test_big_win():
+    pips = _make_lines([(0, 0), (90, 1000), (100, 0)])
+    assert should_enter(pips) is True
 
 
-def test_clear_loss():
-    diff = -1000 * t
-    enter = should_enter(diff)
-    assert enter is False
+def test_big_loss():
+    pips = _make_lines([(0, 0), (90, -1000), (100, 0)])
+    assert should_enter(pips) is False
+
+
+def test_middle_big_win():
+    pips = _make_lines([(0, 0), (50, 1000), (100, 0)])
+    assert should_enter(pips) is True
+
+
+def test_middle_big_loss():
+    pips = _make_lines([(0, 0), (50, -1000), (100, 0)])
+    assert should_enter(pips) is False
+
+
+def test_two_big_wins():
+    pips = _make_lines([(0, 0), (25, 1000), (50, 0), (75, 1000), (100, 0)])
+    assert should_enter(pips) is True
+
+
+def test_two_big_losses():
+    pips = _make_lines([(0, 0), (25, -1000), (50, 0), (75, -1000), (100, 0)])
+    assert should_enter(pips) is False
 
 
 def test_draw():
-    diff = 50 * np.sin(5 * 2*np.pi * t)
-    enter = should_enter(diff)
-    assert enter is False
+    pips = _make_lines([(0, 0), (10, 50), (20, -50), (30, 50), (40, -50),
+                        (50, 50), (60, -50), (70, 50), (80, -50), (90, 50), (100, 0)])
+    assert should_enter(pips) is False
 
 
-def test_win_in_the_middle():
-    diff = 1000 * (np.exp(-(4*(t - 0.5))**2) - np.exp(-4))
-    enter = should_enter(diff)
-    assert enter is True
+def test_small_drawdown_big_win():
+    pips = _make_lines([(0, 0), (20, -200), (80, 800), (100, 0)])
+    assert should_enter(pips) is True
 
 
-def test_small_drawdown_before_win():
-    diff = -10500 * t * (t - 0.3) * (t - 1)
-    enter = should_enter(diff)
-    assert enter is True
+def test_small_drawdown_small_win():
+    pips = _make_lines([(0, 0), (20, -200), (80, 200), (100, 0)])
+    assert should_enter(pips) is False
 
 
-def test_large_drawdown_before_win():
-    diff = -19000 * t * (t - 0.5) * (t - 1)
-    enter = should_enter(diff)
-    assert enter is False
+def test_big_drawdown_big_win():
+    pips = _make_lines([(0, 0), (20, -800), (80, 800), (100, 0)])
+    assert should_enter(pips) is False
 
 
-def test_large_drawdown_no_win():
-    diff = -11000 * t * (t - 0.7) * (t - 0.95)
-    enter = should_enter(diff)
-    assert enter is False
+def test_big_drawdown_small_win():
+    pips = _make_lines([(0, 0), (20, -800), (80, 200), (100, 0)])
+    assert should_enter(pips) is False
