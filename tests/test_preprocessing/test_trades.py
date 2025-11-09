@@ -66,3 +66,8 @@ def test_big_drawdown_big_win():
 def test_big_drawdown_small_win():
     pips = _make_lines([(0, 0), (20, -800), (80, 200), (100, 0)])
     assert should_enter(pips) is False
+
+
+def test_win_plateau():
+    pips = _make_lines([(0, 0), (80, 900), (90, 1000), (100, 0)])
+    assert should_enter(pips) is True
