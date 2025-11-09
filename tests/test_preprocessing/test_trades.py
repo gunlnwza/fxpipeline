@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from fxpipeline.preprocessing.trades import should_enter
 
@@ -10,6 +11,16 @@ def _make_lines(points: list[tuple[int, int]], n_points: int | None = None) -> n
     x_full = np.linspace(xs[0], xs[-1], n_points)
     y_full = np.interp(x_full, xs, ys)
     return y_full
+
+
+def test_not_start_at_zero():
+    pips = _make_lines([(0, 1000), (100, 0)])
+    with pytest.raises(ValueError):
+        should_enter(pips)
+
+    pips = _make_lines([(0, -1000), (100, 0)])
+    with pytest.raises(ValueError):
+        should_enter(pips)
 
 
 def test_big_win():
