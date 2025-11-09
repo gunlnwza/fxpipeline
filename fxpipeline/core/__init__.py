@@ -1,1 +1,1 @@
-from .currency import CurrencyPair, make_pairs
+from .currency import CurrencyPair, make_pair

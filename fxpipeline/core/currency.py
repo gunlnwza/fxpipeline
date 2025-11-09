@@ -1,103 +1,21 @@
-from itertools import combinations
+from dataclasses import dataclass
 
-# import pandas as pd
-
-# TODO: make currency dictionary
-# TODO: move to fxpipeline/core/
-
-
-# TODO[data]: would be nice to remember what exotic pairs are not available
-
-# TODO[data]: hard code pairs instead, so we can reference from dict,
-# begin by fetching list of pairs from Polygon API
-
-# TODO[refactor]: This is smelly, make it a json file instead?
-# CURRENCY_METADATA = {
-#     "USD": {"country": "United States", "region": "North America", "type": "major"},
-#     "EUR": {"country": "Eurozone", "region": "Europe", "type": "major"},
-#     "JPY": {"country": "Japan", "region": "Asia", "type": "major"},
-#     "GBP": {"country": "United Kingdom", "region": "Europe", "type": "major"},
-#     "AUD": {"country": "Australia", "region": "Oceania", "type": "major"},
-#     "CAD": {"country": "Canada", "region": "North America", "type": "major"},
-#     "CHF": {"country": "Switzerland", "region": "Europe", "type": "major"},
-#     "NZD": {"country": "New Zealand", "region": "Oceania", "type": "minor"},
-#     "SEK": {"country": "Sweden", "region": "Europe", "type": "minor"},
-#     "NOK": {"country": "Norway", "region": "Europe", "type": "minor"},
-#     "SGD": {"country": "Singapore", "region": "Asia", "type": "minor"},
-#     "THB": {"country": "Thailand", "region": "Asia", "type": "exotic"},
-#     "ZAR": {"country": "South Africa", "region": "Africa", "type": "exotic"},
-# }
-
-# def all_currencies():
-#     return sorted(set(MAJOR_CURRENCIES + MINOR_CURRENCIES + EXOTIC_CURRENCIES))
-
-# def by_region(region: str):
-#     return [c for c, meta in CURRENCY_METADATA.items() if meta["region"] == region]
-
-# def by_type(currency_type: str):
-#     return [c for c, meta in CURRENCY_METADATA.items() if meta["type"] == currency_type]
+CURRENCY_RANK = [
+    "EUR", "GBP", "AUD", "NZD", "USD", "CAD", "CHF", "JPY",
+    "SEK", "NOK", "SGD", "HKD", "THB", "ZAR"
+]
 
 
-# TODO[data]: make currency info airtight
-MAJOR_CURRENCIES = ["USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF"]
-MINOR_CURRENCIES = ["NZD", "SEK", "NOK", "SGD", "HKD"]
-EXOTIC_CURRENCIES = ["THB", "ZAR", "MXN", "TRY", "PLN", "CZK"]
-G10_CURRENCIES = MAJOR_CURRENCIES + ["NZD", "SEK", "NOK"]
-EMERGING_MARKET_CURRENCIES = ["THB", "ZAR", "MXN", "TRY", "PLN", "IDR", "MYR"]
-ASIAN_CURRENCIES = ["JPY", "CNY", "KRW", "THB", "SGD", "MYR", "IDR", "PHP"]
-EUROPEAN_CURRENCIES = ["EUR", "GBP", "CHF", "SEK", "NOK", "PLN", "CZK"]
-
-
-def get_currencies_by_group(name: str):
-    """name = major, minor, exotic, g10, emerging_market, asian, european"""
-    match name:
-        case "major": return MAJOR_CURRENCIES
-        case "minor": return MINOR_CURRENCIES
-        case "exotic": return EXOTIC_CURRENCIES
-        case "g10": return G10_CURRENCIES
-        case "emerging_market": return EMERGING_MARKET_CURRENCIES
-        case "asian": return ASIAN_CURRENCIES
-        case "european": return EUROPEAN_CURRENCIES
-
-
+@dataclass
 class CurrencyPair:
-    currencies_ordering = [
-        "EUR", "SEK", "NOK", "GBP", "AUD", "NZD", "USD", "CAD", "CHF", "JPY", "THB"
-    ]  # TODO[Tickers]: hard code pairs instead, begin by fetching list of pairs from Polygon API
-    priority = {}
-    for i, cur in enumerate(currencies_ordering):
-        priority[cur] = len(currencies_ordering) - i
-
-    def __init__(self, *args: str | list[str], enforce_priority=True):
-        if len(args) == 1:
-            assert len(args[0]) == 6, "invalid ticker string"
-            cur_1, cur_2 = args[0][:3], args[0][3:]
-        elif len(args) == 2:
-            cur_1, cur_2 = args
-        else:
-            raise ValueError("Invalid arguments format")
-
-        cur_1 = cur_1.upper()
-        cur_2 = cur_2.upper()
-
-        # swap currencies if the 1st is less than 2nd in prestiege (we need 1st > 2nd)
-        if enforce_priority:
-            importance_1 = CurrencyPair.priority.get(cur_1, -1)
-            importance_2 = CurrencyPair.priority.get(cur_2, -1)
-            if importance_1 < importance_2:
-                cur_1, cur_2 = cur_2, cur_1
-
-        self.base = cur_1
-        self.quote = cur_2
-
-        self.pip_digits = 4
-        if self.base == "JPY" or self.quote == "JPY":
-            self.pip_digits = 2
+    base: str
+    quote: str
+    pip: float
 
     @property
     def ticker(self):
         return self.base + self.quote
-
+    
     def reverse(self):
         self.base, self.quote = self.quote, self.base
 
@@ -108,5 +26,40 @@ class CurrencyPair:
         return self.ticker
 
 
-def make_pairs(currencies: list[str]) -> list[CurrencyPair]:
-    return [CurrencyPair(cur_1, cur_2) for cur_1, cur_2 in combinations(currencies, 2)]
+def _sort_base_quote(base: str, quote: str) -> tuple[str, str]:
+    inf = float("inf")
+
+    rank_base = inf
+    rank_quote = inf
+    for i, currency in enumerate(CURRENCY_RANK):
+        if rank_base < inf and rank_quote < inf:
+            break
+        if base == currency:
+            rank_base = i
+        elif quote == currency:
+            rank_quote = i
+
+    if rank_base > rank_quote:
+        base, quote = quote, base
+    return base, quote
+
+
+def _get_pip(base: str, quote: str) -> float:
+    if base == "JPY" or quote == "JPY":
+        return 0.01
+    return 0.0001
+
+
+def make_pair(*args: str | list[str]) -> CurrencyPair:
+    if len(args) == 1:
+        if len(args[0]) != 6:
+            raise ValueError(f"Invalid ticker string '{args[0]}'")
+        base, quote = args[0][:3], args[0][3:]
+    elif len(args) == 2:
+        base, quote = args
+    else:
+        raise ValueError("Invalid arguments format")
+    
+    base, quote = _sort_base_quote(base, quote)
+    pip = _get_pip(base, quote)
+    return CurrencyPair(base, quote, pip)
