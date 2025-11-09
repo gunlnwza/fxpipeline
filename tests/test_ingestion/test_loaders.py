@@ -2,7 +2,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 import pandas as pd
 
-from fxpipeline.ingestion.data import ForexPriceRequest, CurrencyPair
+from fxpipeline.core import CurrencyPair
+from fxpipeline.ingestion.data_request import ForexPriceRequest
 from fxpipeline.ingestion.loaders import get_loader
 from fxpipeline.ingestion.loaders.alpha_vantage import AlphaVantageForex
 from fxpipeline.ingestion.loaders.massive import MassiveForex

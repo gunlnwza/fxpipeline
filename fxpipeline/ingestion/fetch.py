@@ -6,7 +6,9 @@ from urllib3.exceptions import MaxRetryError
 
 from .loaders import get_loader
 from .database import get_database
-from .data import ForexPriceRequest, CurrencyPair
+from .data_request import ForexPriceRequest
+
+from ..core import CurrencyPair
 
 """Fetch functions: fetching smartly and respectfully."""
 
