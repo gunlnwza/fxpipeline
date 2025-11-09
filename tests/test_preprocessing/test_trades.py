@@ -23,62 +23,74 @@ def test_not_start_at_zero():
         should_enter(pips)
 
 
-def test_big_win():
+def test_big_up():
     pips = _make_lines([(0, 0), (90, 1000), (100, 0)])
     assert should_enter(pips) is True
+    assert should_enter(pips, sell=True) is False
 
 
-def test_big_loss():
+def test_big_down():
     pips = _make_lines([(0, 0), (90, -1000), (100, 0)])
     assert should_enter(pips) is False
+    assert should_enter(pips, sell=True) is True
 
 
-def test_middle_big_win():
+def test_middle_big_up():
     pips = _make_lines([(0, 0), (50, 1000), (100, 0)])
     assert should_enter(pips) is True
+    assert should_enter(pips, sell=True) is False
 
 
-def test_middle_big_loss():
+def test_middle_big_down():
     pips = _make_lines([(0, 0), (50, -1000), (100, 0)])
     assert should_enter(pips) is False
+    assert should_enter(pips, sell=True) is True
 
 
-def test_two_big_wins():
+def test_two_big_ups():
     pips = _make_lines([(0, 0), (25, 1000), (50, 0), (75, 1000), (100, 0)])
     assert should_enter(pips) is True
+    assert should_enter(pips, sell=True) is False
 
 
-def test_two_big_losses():
+def test_two_big_downs():
     pips = _make_lines([(0, 0), (25, -1000), (50, 0), (75, -1000), (100, 0)])
     assert should_enter(pips) is False
+    assert should_enter(pips, sell=True) is True
 
 
 def test_draw():
     pips = _make_lines([(0, 0), (10, 50), (20, -50), (30, 50), (40, -50),
                         (50, 50), (60, -50), (70, 50), (80, -50), (90, 50), (100, 0)])
     assert should_enter(pips) is False
+    assert should_enter(pips, sell=True) is False
 
 
-def test_small_drawdown_big_win():
+def test_small_down_big_up():
     pips = _make_lines([(0, 0), (20, -200), (80, 800), (100, 0)])
     assert should_enter(pips) is True
+    assert should_enter(pips, sell=True) is True
 
 
-def test_small_drawdown_small_win():
+def test_small_down_small_up():
     pips = _make_lines([(0, 0), (20, -200), (80, 200), (100, 0)])
     assert should_enter(pips) is False
+    assert should_enter(pips, sell=True) is True
 
 
-def test_big_drawdown_big_win():
+def test_big_down_big_up():
     pips = _make_lines([(0, 0), (20, -800), (80, 800), (100, 0)])
     assert should_enter(pips) is False
+    assert should_enter(pips, sell=True) is True
 
 
-def test_big_drawdown_small_win():
+def test_big_down_small_up():
     pips = _make_lines([(0, 0), (20, -800), (80, 200), (100, 0)])
     assert should_enter(pips) is False
+    assert should_enter(pips, sell=True) is True
 
 
-def test_win_plateau():
+def test_plateau_up():
     pips = _make_lines([(0, 0), (80, 900), (90, 1000), (100, 0)])
     assert should_enter(pips) is True
+    assert should_enter(pips, sell=True) is False

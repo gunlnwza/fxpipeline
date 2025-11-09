@@ -1,12 +1,15 @@
 import numpy as np
 
 
-def should_enter(pips: np.ndarray,
+def should_enter(pips: np.ndarray, *, sell: bool = False,
                  required_reward_to_risk: float = 2.0,
                  required_win: float = 200.0) -> bool:
     """Look at 'pips' shape and judge if it's a good trade."""
     if pips[0] != 0:
         raise ValueError("First value of 'pips' must be 0")
+
+    if sell:
+        pips *= -1
 
     max_win = max(pips)
     if max_win < required_win:
