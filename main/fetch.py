@@ -7,9 +7,9 @@ from fxpipeline.utils import handle_sigint
 logger = logging.getLogger(__name__)
 
 
-def config_logging():
+def config_logging(debug=True):
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.DEBUG if debug else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt='%Y-%m-%d %H:%M:%S',
         handlers=[logging.StreamHandler()]
@@ -27,17 +27,17 @@ def config_logging():
 
 
 def main():
-    handle_sigint()
-    config_logging()
-
     parser = argparse.ArgumentParser()
     parser.add_argument("tickers", nargs="+")
     parser.add_argument("-d", "--days", type=int, default=100)
     parser.add_argument("-s", "--source", default="yfinance")
+    parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
-    for ticker in args.tickers:
-        fetch_forex_price(ticker, args.days, args.source)
+    handle_sigint()
+    config_logging(args.debug)
+
+    fetch_forex_price(args.tickers, args.source, days=args.days)
 
 
 if __name__ == "__main__":

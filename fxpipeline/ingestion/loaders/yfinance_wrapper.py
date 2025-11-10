@@ -4,14 +4,15 @@ import warnings
 import pandas as pd
 import yfinance as yf
 
-from .base import ForexPriceLoader, ForexPriceRequest
+from .base import ForexPriceLoader, BatchDownloadMixin
+from ..data_request import ForexPriceRequest
 
 logger = logging.getLogger(__name__)
 
 
-class YFinanceForex(ForexPriceLoader):
-    def __init__(self):
-        super().__init__(None)
+class YFinanceForex(ForexPriceLoader, BatchDownloadMixin):
+    def __init__(self, api_key=None):
+        super().__init__(api_key)
 
     @staticmethod
     def _clean(df: pd.DataFrame) -> pd.DataFrame:
@@ -27,12 +28,31 @@ class YFinanceForex(ForexPriceLoader):
         logger.info(f"Downloading '{req}' with yfinance")
 
         warnings.filterwarnings("ignore")  # NOTE: yfinance's peewee might forget to close db
-        df = yf.download(f"{req.ticker}=X", req.start, req.end, progress=False)
+        ticker = f"{req.ticker}=X"
+        df = yf.download(ticker, req.start, req.end, progress=False)
         warnings.filterwarnings("default")
 
         df = self._clean(df)
         return df
 
-    def download_batch(self, reqs: list[ForexPriceRequest]):
-        # optimization, download all tickers at once
-        raise NotImplementedError
+    @staticmethod
+    def _batch_clean(df: pd.DataFrame) -> pd.DataFrame:
+        df.rename(columns={
+            "Open": "open", "High": "high", "Low": "low",
+            "Close": "close", "Volume": "volume"}, inplace=True)
+        df.index.name = "timestamp"
+        return df
+
+    def batch_download(self, reqs: list[ForexPriceRequest]) -> list[pd.DataFrame]:
+        logger.info(f"Downloading '{reqs}' with yfinance")
+
+        start = min(r.start for r in reqs)
+        end = max(r.end for r in reqs)
+
+        tickers = [f"{r.ticker}=X" for r in reqs]
+        df = yf.download(tickers, start, end, group_by="ticker", progress=False)
+
+        df = self._batch_clean(df)
+        lst = [df[ticker] for ticker in tickers]
+
+        return lst

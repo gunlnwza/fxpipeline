@@ -4,22 +4,21 @@ import time
 import pandas as pd
 from urllib3.exceptions import MaxRetryError
 
-from .loaders import get_loader
-from .database import get_database
-from .data_request import ForexPriceRequest
+from .loaders import get_loader, ForexPriceLoader, BatchDownloadMixin
+from .database import get_database, ForexPriceDatabase
+from .data_request import make_recent_data_request, ForexPriceRequest
 
-from ..core import CurrencyPair
 
 """Fetch functions: fetching smartly and respectfully."""
 
 logger = logging.getLogger(__name__)
 
 
-def _fetch(req: ForexPriceRequest, source: str) -> bool:
+def _fetch(req: ForexPriceRequest,
+           loader: ForexPriceLoader,
+           database: ForexPriceDatabase) -> bool:
     """Fetch one time. Updating the cache"""
     t = req.ticker
-    loader = get_loader(source)
-    database = get_database(source)
 
     if database.is_up_to_date(t, buffer_days=7):
         logger.info(f"{t} is up to date.")
@@ -44,23 +43,43 @@ def _fetch(req: ForexPriceRequest, source: str) -> bool:
     database.save(df, t)
 
 
-def _fetch_with_retries(req: ForexPriceRequest, source: str, retries=5, max_retry_wait=30) -> bool:
+def _batch_fetch(reqs: list[ForexPriceRequest],
+                 loader: BatchDownloadMixin,
+                 database: ForexPriceDatabase) -> bool:
+    # TODO[ingestion]: modify individually each ForexPriceRequest before sending to batch_download
+    df = loader.batch_download(reqs)
+    print(df)
+
+
+def _fetch_with_retries(reqs: list[ForexPriceRequest],
+                        loader: ForexPriceLoader,
+                        database: ForexPriceDatabase,
+                        retries=5, max_retry_wait=30) -> bool:
     """Fetch several times, update nothing if no data is downloaded"""
-    logger.info(f"Fetching {req.pair}...")
-    for i in range(1, retries + 1):
-        try:
-            logger.debug(f"Fetching {req.pair} (attempt {i})...")
-            _fetch(req, source)  # Can raise any errors. If that happens, try again.
-            return
-        except MaxRetryError as e:
-            logger.error(f"MaxRetryError: {e} ; retrying in {max_retry_wait:.1f}s...")
-            if i == retries:
-                break
-            time.sleep(max_retry_wait)
+    for req in reqs:
+        logger.info(f"Fetching {req.pair}...")
+        for i in range(1, retries + 1):
+            try:
+                logger.debug(f"Fetching {req.pair} (attempt {i})...")
+                _fetch(req, loader, database)  # Can raise exceptions.
+                return
+            except MaxRetryError as e:
+                logger.error(f"MaxRetryError: {e} ; retrying in {max_retry_wait:.1f}s...")
+                if i == retries:
+                    break
+                time.sleep(max_retry_wait)
 
 
-def fetch_forex_price(ticker: str, days: int, source: str):
-    now = pd.Timestamp.now()
-    start = now - pd.Timedelta(days=days)
-    req = ForexPriceRequest(CurrencyPair(ticker), start, now)
-    _fetch_with_retries(req, source)
+def fetch_forex_price(tickers: str | list[str], source: str, days: int = 365):
+    if type(tickers) == str:
+        reqs = [make_recent_data_request(tickers, days)]
+    else:
+        reqs = [make_recent_data_request(t, days) for t in tickers]
+    loader = get_loader(source)
+    database = get_database(source)
+
+    if isinstance(loader, BatchDownloadMixin):
+        logger.info(f"Fetching {reqs}...")
+        _batch_fetch(reqs, loader, database)
+    else:
+        _fetch_with_retries(reqs, loader, database)

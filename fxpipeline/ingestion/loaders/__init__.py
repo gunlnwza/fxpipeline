@@ -1,4 +1,4 @@
-from .base import ForexPriceLoader, APIError
+from .base import ForexPriceLoader, BatchDownloadMixin, APIError, NotDownloadedError
 from .factory import get_loader
 
 from .alpha_vantage import AlphaVantageForex

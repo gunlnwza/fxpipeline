@@ -26,3 +26,9 @@ class ForexPriceLoader(ABC):
     def download(req: ForexPriceRequest) -> pd.DataFrame:
         """Download forex data from internet, can Errors"""
         pass
+
+
+class BatchDownloadMixin(ABC):
+    @abstractmethod
+    def batch_download(reqs: list[ForexPriceRequest]) -> list[pd.DataFrame]:
+        """Call download() in a loop, use min-max of Timestamp"""

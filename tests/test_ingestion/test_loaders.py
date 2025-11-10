@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 import pandas as pd
 
-from fxpipeline.core import CurrencyPair
+from fxpipeline.core import CurrencyPair, make_pair
 from fxpipeline.ingestion.data_request import ForexPriceRequest
 from fxpipeline.ingestion.loaders import get_loader
 from fxpipeline.ingestion.loaders.alpha_vantage import AlphaVantageForex
@@ -36,7 +36,7 @@ def test_alpha_vantage_download(mock_get):
 
     loader = AlphaVantageForex("api_key")
     req = ForexPriceRequest(
-        CurrencyPair("ABCDEF"), pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")
+        make_pair("ABCDEF"), pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")
         )
     df = loader.download(req)
 
@@ -73,7 +73,7 @@ def test_massive_download(mock_restclient):
 
     loader = MassiveForex("api_key")
     req = ForexPriceRequest(
-        CurrencyPair("ABCDEF"), pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")
+        make_pair("ABCDEF"), pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")
         )
     df = loader.download(req)
 
@@ -89,6 +89,18 @@ def test_massive_download(mock_restclient):
     assert df.iloc[0].to_list() == [1, 1, 1, 1, 10, 1]
     assert df.iloc[1].to_list() == [2, 2, 2, 2, 20, 2]
     assert df.iloc[2].to_list() == [3, 3, 3, 3, 30, 3]
+
+
+def _assert_clean_yfinance_df(df):
+    assert isinstance(df, pd.DataFrame)
+
+    assert df.index.name == "timestamp"
+    assert df.index.to_list() == [
+        pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-02"), pd.Timestamp("2024-01-03")
+        ]
+
+    assert list(df.columns) == ["open", "high", "low", "close", "volume"]
+    assert len(df) == 3
 
 
 @patch("fxpipeline.ingestion.loaders.yfinance_wrapper.yf.download")
@@ -111,19 +123,58 @@ def test_yfinance_download(mock_download):
 
     loader = YFinanceForex()
     req = ForexPriceRequest(
-        CurrencyPair("ABCDEF"), pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")
+        make_pair("ABCDEF"), pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")
         )
     df = loader.download(req)
 
-    assert isinstance(df, pd.DataFrame)
-
-    assert df.index.name == "timestamp"
-    assert df.index.to_list() == [
-        pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-02"), pd.Timestamp("2024-01-03")
-        ]
-
-    assert list(df.columns) == ["open", "high", "low", "close", "volume"]
-    assert len(df) == 3
+    _assert_clean_yfinance_df(df)
     assert df.iloc[0].to_list() == [1, 1, 1, 1, 10]
     assert df.iloc[1].to_list() == [2, 2, 2, 2, 20]
     assert df.iloc[2].to_list() == [3, 3, 3, 3, 30]
+
+
+@patch("fxpipeline.ingestion.loaders.yfinance_wrapper.yf.download")
+def test_yfinance_batch_download(mock_download):
+    df = pd.DataFrame({
+        "Close_1": [1, 2, 3],
+        "High_1": [1, 2, 3],
+        "Low_1": [1, 2, 3],
+        "Open_1": [1, 2, 3],
+        "Volume_1": [100, 200, 300],
+        "Close_2": [10, 20, 30],
+        "High_2": [10, 20, 30],
+        "Low_2": [10, 20, 30],
+        "Open_2": [10, 20, 30],
+        "Volume_2": [100, 200, 300]
+    }, index=[pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-02"), pd.Timestamp("2024-01-03")])
+
+    df.index.name = "Date"
+    columns = [
+        ("ABCDEF=X", "Open"), ("ABCDEF=X", "High"), ("ABCDEF=X", "Low"), ("ABCDEF=X", "Close"),
+        ("ABCDEF=X", "Volume"),
+        ("ABCXYZ=X", "Open"), ("ABCXYZ=X", "High"), ("ABCXYZ=X", "Low"), ("ABCXYZ=X", "Close"),
+        ("ABCXYZ=X", "Volume")
+        ]
+    df.columns = pd.MultiIndex.from_tuples(columns)
+    df.columns.names = ["Ticker", "Price"]
+
+    mock_download.return_value = df
+
+    loader = YFinanceForex()
+    reqs = [
+        ForexPriceRequest(
+            make_pair("ABCDEF"), pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")
+        ),
+        ForexPriceRequest(
+            make_pair("ABCXYZ"), pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")
+        )
+    ]
+    lst = loader.batch_download(reqs)
+
+    assert type(lst) == list
+    assert len(lst) == 2
+    assert isinstance(lst[0], pd.DataFrame)
+    assert isinstance(lst[1], pd.DataFrame)
+
+    _assert_clean_yfinance_df(lst[0])
+    _assert_clean_yfinance_df(lst[1])

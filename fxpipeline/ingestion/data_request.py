@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from ..core import CurrencyPair
+from ..core import make_pair, CurrencyPair
 
 
 @dataclass
@@ -26,7 +26,11 @@ class ForexPriceRequest:
         return ForexPriceRequest(self.pair, self.start, self.end)
 
 
-def make_forex_price_request(ticker: str, days=365) -> ForexPriceRequest:
+def make_data_request(ticker: str, start: str, end: str) -> ForexPriceRequest:
+    return ForexPriceRequest(make_pair(ticker), pd.Timestamp(start), pd.Timestamp(end))
+
+
+def make_recent_data_request(ticker: str, days=365) -> ForexPriceRequest:
     today = pd.Timestamp.now()
     start = today - pd.Timedelta(days=days)
-    return ForexPriceRequest(CurrencyPair(ticker), start, today)
+    return ForexPriceRequest(make_pair(ticker), start, today)
