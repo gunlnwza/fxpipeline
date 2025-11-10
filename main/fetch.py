@@ -38,7 +38,11 @@ def main():
 
     config_logging(args.debug)
 
-    fetch_forex_price(args.tickers, args.source, days=args.days)
+    if args.tickers == ["major"]:
+        tickers = ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY"]
+    else:
+        tickers = args.tickers
+    fetch_forex_price(tickers, args.source, days=args.days)
 
 
 if __name__ == "__main__":
