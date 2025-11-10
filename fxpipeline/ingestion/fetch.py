@@ -13,6 +13,8 @@ from .data_request import make_recent_data_request, ForexPriceRequest
 
 logger = logging.getLogger(__name__)
 
+# TODO[test]: all of these
+
 
 def _fetch(req: ForexPriceRequest,
            loader: ForexPriceLoader,

@@ -33,6 +33,7 @@ class ForexPriceDatabase(ABC):
         pass
 
 
+# TODO[test]
 class CSVDatabase(ForexPriceDatabase):
     def __init__(self, path: str):
         super().__init__()

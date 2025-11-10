@@ -1,6 +1,6 @@
 import pandas as pd
 
-from fxpipeline.preprocessing import pip_diffs, smooth_boolean_series
+from fxpipeline.preprocessing.trades import pip_diffs, smooth_boolean_series
 
 
 def test_pip_diffs_increase_JPY():
