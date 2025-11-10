@@ -10,6 +10,7 @@ from ..data_request import ForexPriceRequest
 logger = logging.getLogger(__name__)
 
 
+# NOTE: yfinance might forget to close db connection
 class YFinanceForex(ForexPriceLoader, BatchDownloadMixin):
     def __init__(self, api_key=None):
         super().__init__(api_key)
@@ -27,10 +28,10 @@ class YFinanceForex(ForexPriceLoader, BatchDownloadMixin):
     def download(self, req: ForexPriceRequest) -> pd.DataFrame:
         logger.info(f"Downloading '{req}' with yfinance")
 
-        warnings.filterwarnings("ignore")  # NOTE: yfinance's peewee might forget to close db
         ticker = f"{req.ticker}=X"
-        df = yf.download(ticker, req.start, req.end, progress=False)
-        warnings.filterwarnings("default")
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("ignore")
+            df = yf.download(ticker, req.start, req.end, progress=False)
 
         df = self._clean(df)
         return df
@@ -44,15 +45,15 @@ class YFinanceForex(ForexPriceLoader, BatchDownloadMixin):
         return df
 
     def batch_download(self, reqs: list[ForexPriceRequest]) -> list[pd.DataFrame]:
-        logger.info(f"Downloading '{reqs}' with yfinance")
-
-        start = min(r.start for r in reqs)
-        end = max(r.end for r in reqs)
+        logger.info(f"Downloading '{[r.ticker for r in reqs]}' with yfinance")
 
         tickers = [f"{r.ticker}=X" for r in reqs]
-        df = yf.download(tickers, start, end, group_by="ticker", progress=False)
+        start = min(r.start for r in reqs)
+        end = max(r.end for r in reqs)
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("ignore")
+            df = yf.download(tickers, start, end, group_by="ticker", progress=False)
 
         df = self._batch_clean(df)
         lst = [df[ticker] for ticker in tickers]
-
         return lst

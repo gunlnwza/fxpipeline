@@ -14,7 +14,7 @@ class ForexPriceDatabase(ABC):
 
     @abstractmethod
     def save(self, df: pd.DataFrame, *args):
-        """Save the given DataFrame"""
+        """Save DataFrame: create new file, or join to existing file"""
         pass
 
     @abstractmethod
@@ -41,6 +41,12 @@ class CSVDatabase(ForexPriceDatabase):
     def save(self, df: pd.DataFrame, ticker: str):
         os.makedirs(self.path, exist_ok=True)
         filename = f"{self.path}/{ticker}.csv"
+
+        if self.have(ticker):
+            old_df = self.load(ticker)
+            df = pd.concat([old_df, df], ignore_index=False)
+            df = df[~df.index.duplicated(keep="last")]
+
         df.to_csv(filename)
         logger.info(f"Save data to '{filename}'")
 

@@ -27,6 +27,8 @@ def config_logging(debug=True):
 
 
 def main():
+    handle_sigint()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("tickers", nargs="+")
     parser.add_argument("-d", "--days", type=int, default=100)
@@ -34,7 +36,6 @@ def main():
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
-    handle_sigint()
     config_logging(args.debug)
 
     fetch_forex_price(args.tickers, args.source, days=args.days)

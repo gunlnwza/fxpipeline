@@ -18,37 +18,28 @@ def _fetch(req: ForexPriceRequest,
            loader: ForexPriceLoader,
            database: ForexPriceDatabase) -> bool:
     """Fetch one time. Updating the cache"""
-    t = req.ticker
-
-    if database.is_up_to_date(t, buffer_days=7):
-        logger.info(f"{t} is up to date.")
+    logging.debug(f"Request: {req}")
+    if database.is_up_to_date(req.ticker, buffer_days=7):
+        logger.info(f"{req.ticker} is up to date.")
         return
 
-    old_df = database.load(t) if database.have(t) else None
-    if old_df is None or len(old_df) == 0:
-        df = loader.download(req)
-        logger.info(f"Download data for '{req}'")
-        database.save(df, t)
-        return
+    if database.have(req.ticker):
+        # TODO[optimize]: can optimize with json metadata (add last_datetime)
+        old_df = database.load(req.ticker)
+        last_datetime = old_df.index[-1].to_pydatetime()
+        req = ForexPriceRequest(req.pair, last_datetime, req.end)
 
-    last_datetime = old_df.index[-1].to_pydatetime()
-    req = ForexPriceRequest(req.pair, last_datetime, req.end)
     df = loader.download(req)
-    logger.info(f"Download data for '{req}'")
-
-    df = pd.concat([old_df, df], ignore_index=False)
-    df = df[~df.index.duplicated(keep="last")]
-    logger.info(f"Update data for '{t}'")
-
-    database.save(df, t)
+    database.save(df, req.ticker)
 
 
 def _batch_fetch(reqs: list[ForexPriceRequest],
                  loader: BatchDownloadMixin,
                  database: ForexPriceDatabase) -> bool:
-    # TODO[ingestion]: modify individually each ForexPriceRequest before sending to batch_download
-    df = loader.batch_download(reqs)
-    print(df)
+    logging.debug(f"Requests: {reqs}")
+    lst = loader.batch_download(reqs)
+    for i in range(len(lst)):
+        database.save(lst[i], reqs[i].ticker)
 
 
 def _fetch_with_retries(reqs: list[ForexPriceRequest],
@@ -62,7 +53,7 @@ def _fetch_with_retries(reqs: list[ForexPriceRequest],
             try:
                 logger.debug(f"Fetching {req.pair} (attempt {i})...")
                 _fetch(req, loader, database)  # Can raise exceptions.
-                return
+                break
             except MaxRetryError as e:
                 logger.error(f"MaxRetryError: {e} ; retrying in {max_retry_wait:.1f}s...")
                 if i == retries:
@@ -79,7 +70,7 @@ def fetch_forex_price(tickers: str | list[str], source: str, days: int = 365):
     database = get_database(source)
 
     if isinstance(loader, BatchDownloadMixin):
-        logger.info(f"Fetching {reqs}...")
+        logger.info(f"Fetching {[r.ticker for r in reqs]}...")
         _batch_fetch(reqs, loader, database)
     else:
         _fetch_with_retries(reqs, loader, database)
