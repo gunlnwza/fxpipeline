@@ -22,9 +22,6 @@ def get_windows(series: pd.Series, seen_rows=10, next_rows=1):
     series_arr.reverse()
 
     df = pd.concat(series_arr, axis=1)
-    df.dropna(inplace=True)
-    df.reset_index(drop=True, inplace=True)
-
     return df
 
 
