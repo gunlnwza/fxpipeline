@@ -20,7 +20,7 @@ class CurrencyPair:
         self.base, self.quote = self.quote, self.base
 
     def __repr__(self):
-        return f"CurrencyPair({self.base}, {self.quote})"
+        return f"CurrencyPair({self.base}, {self.quote}, {self.pip})"
 
     def __str__(self):
         return self.ticker
