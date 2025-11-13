@@ -10,7 +10,6 @@ from ..data_request import ForexPriceRequest
 logger = logging.getLogger(__name__)
 
 
-# NOTE: yfinance might forget to close db connection
 class YFinanceForex(ForexPriceLoader, BatchDownloadMixin):
     def __init__(self, api_key=None):
         super().__init__(api_key)

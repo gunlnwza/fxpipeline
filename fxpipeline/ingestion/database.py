@@ -5,43 +5,43 @@ from abc import ABC, abstractmethod
 import pandas as pd
 from dotenv import load_dotenv
 
+from ..core import ForexPrice, CurrencyPair
+
 logger = logging.getLogger(__name__)
 
 
 class ForexPriceDatabase(ABC):
-    def __init__(self):
+    @abstractmethod
+    def save(self, data: ForexPrice, source: str):
+        """Save 'data'"""
         pass
 
     @abstractmethod
-    def save(self, df: pd.DataFrame, *args):
-        """Save DataFrame: create new file, or join to existing file"""
+    def load(self, pair: CurrencyPair, source: str) -> ForexPrice:
+        """Load 'pair'"""
         pass
 
     @abstractmethod
-    def load(self, *args) -> pd.DataFrame:
-        """Load and return as DataFrame"""
+    def have(self, pair: CurrencyPair, source: str) -> bool:
+        """Return True if 'pair' exists"""
         pass
 
     @abstractmethod
-    def have(self, *args) -> bool:
-        """Return True if there is the wanted data in cache"""
-        pass
-
-    @abstractmethod
-    def is_up_to_date(self, *args) -> bool:
-        """Return True if the wanted data is fresh"""
+    def is_fresh(self, pair: CurrencyPair, source: str) -> bool:
+        """Return True if 'pair' is fresh"""
         pass
 
 
-# TODO[test]
-class CSVDatabase(ForexPriceDatabase):
-    def __init__(self, path: str):
+class TextBasedDatabase(ForexPriceDatabase):
+    def __init__(self, cache_path: str):
         super().__init__()
-        self.path = path
+        self.path = cache_path
 
-    def save(self, df: pd.DataFrame, ticker: str):
+    def save(self, data: ForexPrice, source: str):
+        # path = 
         os.makedirs(self.path, exist_ok=True)
-        filename = f"{self.path}/{ticker}.csv"
+        ticker = data.pair.ticker
+        filename = f"{self.path}/.alpha_vantage_cache/{ticker}.csv"
 
         if self.have(ticker):
             old_df = self.load(ticker)
@@ -51,37 +51,66 @@ class CSVDatabase(ForexPriceDatabase):
         df.to_csv(filename)
         logger.info(f"Save data to '{filename}'")
 
-    def load(self, ticker: str) -> pd.DataFrame:
-        filename = f"{self.path}/{ticker}.csv"
-        return pd.read_csv(filename, index_col="timestamp", parse_dates=True)
+    def load(self, pair: CurrencyPair, source: str) -> ForexPrice:
+        pass
 
-    def have(self, ticker: str) -> bool:  # TODO: responsibility is weird
-        filename = f"{self.path}/{ticker}.csv"
-        if os.path.exists(filename):
-            return True
-        return False
+    def have(self, pair: CurrencyPair, source: str) -> bool:
+        pass
 
-    def is_up_to_date(self, ticker: str, buffer_days=7) -> bool:
-        # This is expensive
-        # TODO[optimize]: Add json metadata
-        if not self.have(ticker):
-            return False
-        df = self.load(ticker)
-        if len(df) == 0:
-            return False
-        last_datetime = df.index[-1].to_pydatetime()
-        cur_datetime = pd.Timestamp.now()
-        max_lag = pd.Timedelta(days=buffer_days)
-        return cur_datetime - last_datetime <= max_lag
+    def is_fresh(self, pair: CurrencyPair, source: str) -> bool:
+        pass
 
 
-class ParquetDatabase(ForexPriceDatabase):
-    def __init__(self):
-        super().__init__()
+# Ideally, there should be only one kind of database
+
+# # TODO[test]
+# class CSVDatabase(ForexPriceDatabase):
+#     def __init__(self, path: str):
+#         self.path = path
+
+#     def save(self, df: pd.DataFrame, ticker: str):
+#         os.makedirs(self.path, exist_ok=True)
+#         filename = f"{self.path}/{ticker}.csv"
+
+#         if self.have(ticker):
+#             old_df = self.load(ticker)
+#             df = pd.concat([old_df, df], ignore_index=False)
+#             df = df[~df.index.duplicated(keep="last")]
+
+#         df.to_csv(filename)
+#         logger.info(f"Save data to '{filename}'")
+
+#     def load(self, ticker: str) -> pd.DataFrame:
+#         filename = f"{self.path}/{ticker}.csv"
+#         return pd.read_csv(filename, index_col="timestamp", parse_dates=True)
+
+#     def have(self, ticker: str) -> bool:  # TODO: responsibility is weird
+#         filename = f"{self.path}/{ticker}.csv"
+#         if os.path.exists(filename):
+#             return True
+#         return False
+
+#     def is_up_to_date(self, ticker: str, buffer_days=7) -> bool:
+#         # This is expensive
+#         # TODO[optimize]: Add json metadata
+#         if not self.have(ticker):
+#             return False
+#         df = self.load(ticker)
+#         if len(df) == 0:
+#             return False
+#         last_datetime = df.index[-1].to_pydatetime()
+#         cur_datetime = pd.Timestamp.now()
+#         max_lag = pd.Timedelta(days=buffer_days)
+#         return cur_datetime - last_datetime <= max_lag
 
 
-def get_database(source: str = "alpha_vantage", method: str = "csv"):
-    load_dotenv()
-    CACHES_PATH = os.getenv("CACHES_PATH")
-    path = f"{CACHES_PATH}/.{source}_cache"
-    return CSVDatabase(path)
+# class ParquetDatabase(ForexPriceDatabase):
+#     def __init__(self):
+#         pass
+
+
+# def get_database(source: str = "alpha_vantage", method: str = "csv"):
+#     load_dotenv()
+#     CACHES_PATH = os.getenv("CACHES_PATH")
+#     path = f"{CACHES_PATH}/.{source}_cache"
+#     return CSVDatabase(path)
