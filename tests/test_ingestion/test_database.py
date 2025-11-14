@@ -1,31 +1,53 @@
-import os
-import tempfile
-
 import pandas as pd
+import pytest
 
 from fxpipeline.core import ForexPrice, make_pair
-from fxpipeline.ingestion.database import TextBasedDatabase
+from fxpipeline.ingestion._OLD_database import SQLiteDatabase
+
+"""
+Database Jobs
+- Insert price
+- Store price (Alpha Vantage, Massive, yfinance)
+- Load price
+- Fetch last price
+- Fetch last timestamp
+"""
+
+# conn = SQLiteDatabase(":memory:")
+# usdjpy = make_pair("USDJPY")
+# eurusd = make_pair("EURUSD")
 
 
-def test_textbased_database_save_and_load():
-    with tempfile.TemporaryDirectory() as tempdir:
-        db = TextBasedDatabase(tempdir)
+@pytest.fixture
+def alpha_vantage_df():
+    return pd.DataFrame()  # declare with list
 
-        pair = make_pair("USDJPY")
-        source = "test_source"
 
-        data = ForexPrice(
-            pair=pair,
-            source=source,
-            df=pd.DataFrame(
-                {"open": [1.0, 1.1], "close": [1.2, 1.3]},
-                index=pd.to_datetime(["2023-01-01", "2023-01-02"]),
-            )
-        )
+@pytest.fixture
+def massive_df():
+    return pd.DataFrame()
 
-        db.save(data, source)
-        assert db.have(pair, source)
-        assert db.is_fresh(pair, source)
 
-        loaded = db.load(pair, source)
-        pd.testing.assert_frame_equal(data.df, loaded.df)
+@pytest.fixture
+def yfinance_df():
+    return pd.DataFrame()
+
+
+def test_source_alpha_vantage(alpha_vantage_df):
+    with conn:
+        # test insert
+        pass
+
+    # test fetch single df
+
+    # test fetch last price
+
+
+# def test_source_massive():
+#     pass
+
+# def test_source_yfinance():
+#     pass
+
+
+# conn.close()

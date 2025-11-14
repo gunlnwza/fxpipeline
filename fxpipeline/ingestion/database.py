@@ -1,9 +1,9 @@
 import os
 import logging
+import sqlite3
 from abc import ABC, abstractmethod
 
 import pandas as pd
-from dotenv import load_dotenv
 
 from ..core import ForexPrice, CurrencyPair
 
@@ -12,105 +12,80 @@ logger = logging.getLogger(__name__)
 
 class ForexPriceDatabase(ABC):
     @abstractmethod
-    def save(self, data: ForexPrice, source: str):
-        """Save 'data'"""
+    def save(self, data: ForexPrice):
+        """Save 'data', append to table, overwrite existing rows"""
         pass
 
     @abstractmethod
-    def load(self, pair: CurrencyPair, source: str) -> ForexPrice:
-        """Load 'pair'"""
+    def load(self, pair: CurrencyPair) -> ForexPrice:
+        """Load all historical data of 'pair'"""
         pass
 
     @abstractmethod
-    def have(self, pair: CurrencyPair, source: str) -> bool:
-        """Return True if 'pair' exists"""
+    def last_price(self, pair: CurrencyPair) -> float:
+        """Get only last price of 'pair'"""
         pass
 
     @abstractmethod
-    def is_fresh(self, pair: CurrencyPair, source: str) -> bool:
-        """Return True if 'pair' is fresh"""
+    def last_timestamp(self, pair: CurrencyPair) -> pd.Timestamp:
+        """Get only last timestamp of 'pair"""
         pass
 
 
-class TextBasedDatabase(ForexPriceDatabase):
-    def __init__(self, cache_path: str):
-        super().__init__()
-        self.path = cache_path
+class SQLiteDatabase(ForexPriceDatabase):
+    def __init__(self, database: str):
+        self.conn = sqlite3.connect(database)
+    
+    def open(self, database: str):
+        self.conn = sqlite3.connect(database)
 
-    def save(self, data: ForexPrice, source: str):
-        # path = 
-        os.makedirs(self.path, exist_ok=True)
-        ticker = data.pair.ticker
-        filename = f"{self.path}/.alpha_vantage_cache/{ticker}.csv"
+    def close(self):
+        self.conn.close()
+        self.conn = None
 
-        if self.have(ticker):
-            old_df = self.load(ticker)
-            df = pd.concat([old_df, df], ignore_index=False)
-            df = df[~df.index.duplicated(keep="last")]
+    def _create_alpha_vantage_table(self):
+        self.conn.execute("""
+        CREATE TABLE IF NOT EXISTS alpha_vantage_prices (
+            symbol TEXT,
+            timestamp DATETIME,
+            open REAL,
+            high REAL,
+            low REAL,
+            close REAL
+        );
+        """)
 
-        df.to_csv(filename)
-        logger.info(f"Save data to '{filename}'")
+    def _create_massive_table(self):
+        self.conn.execute()
 
-    def load(self, pair: CurrencyPair, source: str) -> ForexPrice:
-        pass
+    def _create_yfinance_table(self):
+        self.conn.execute()
 
-    def have(self, pair: CurrencyPair, source: str) -> bool:
-        pass
+    def save(self, data: ForexPrice):
+        source = data.pair.source
+        with self.conn:
+            match source:
+                case "alpha_vantage":
+                    self._create_alpha_vantage_table()
+                case "massive":
+                    self._create_massive_table()
+                case "yfinance":
+                    self._create_yfinance_table()
+                case _:
+                    raise ValueError(f"Source '{source}' is not supported")
+            data.df.to_sql(f"{source}_prices", self.conn, if_exists="replace", index=False)
 
-    def is_fresh(self, pair: CurrencyPair, source: str) -> bool:
-        pass
+    def load(self, pair: CurrencyPair) -> ForexPrice:
+        with self.conn:
+            df = pd.read_sql(f"SELECT * FROM {pair.source} WHERE ticker = {pair.ticker}", self.conn)
+        return ForexPrice(pair, df)
 
+    def last_price(self, pair: CurrencyPair) -> float:
+        with self.conn:
+            last_price = pd.read_sql(f"SELECT LAST(price) FROM {pair.source}_prices WHERE ticker = {pair.ticker}", self.conn)
+        return last_price
 
-# Ideally, there should be only one kind of database
-
-# # TODO[test]
-# class CSVDatabase(ForexPriceDatabase):
-#     def __init__(self, path: str):
-#         self.path = path
-
-#     def save(self, df: pd.DataFrame, ticker: str):
-#         os.makedirs(self.path, exist_ok=True)
-#         filename = f"{self.path}/{ticker}.csv"
-
-#         if self.have(ticker):
-#             old_df = self.load(ticker)
-#             df = pd.concat([old_df, df], ignore_index=False)
-#             df = df[~df.index.duplicated(keep="last")]
-
-#         df.to_csv(filename)
-#         logger.info(f"Save data to '{filename}'")
-
-#     def load(self, ticker: str) -> pd.DataFrame:
-#         filename = f"{self.path}/{ticker}.csv"
-#         return pd.read_csv(filename, index_col="timestamp", parse_dates=True)
-
-#     def have(self, ticker: str) -> bool:  # TODO: responsibility is weird
-#         filename = f"{self.path}/{ticker}.csv"
-#         if os.path.exists(filename):
-#             return True
-#         return False
-
-#     def is_up_to_date(self, ticker: str, buffer_days=7) -> bool:
-#         # This is expensive
-#         # TODO[optimize]: Add json metadata
-#         if not self.have(ticker):
-#             return False
-#         df = self.load(ticker)
-#         if len(df) == 0:
-#             return False
-#         last_datetime = df.index[-1].to_pydatetime()
-#         cur_datetime = pd.Timestamp.now()
-#         max_lag = pd.Timedelta(days=buffer_days)
-#         return cur_datetime - last_datetime <= max_lag
-
-
-# class ParquetDatabase(ForexPriceDatabase):
-#     def __init__(self):
-#         pass
-
-
-# def get_database(source: str = "alpha_vantage", method: str = "csv"):
-#     load_dotenv()
-#     CACHES_PATH = os.getenv("CACHES_PATH")
-#     path = f"{CACHES_PATH}/.{source}_cache"
-#     return CSVDatabase(path)
+    def last_timestamp(self, pair: CurrencyPair) -> pd.Timestamp:
+        with self.conn:
+            last_timestamp = pd.read_sql(f"SELECT LAST(timestamp) FROM {pair.source}_prices WHERE ticker = {pair.ticker}", self.conn)
+        return last_timestamp

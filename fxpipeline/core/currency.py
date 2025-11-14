@@ -10,12 +10,16 @@ CURRENCY_RANK = [
 class CurrencyPair:
     base: str
     quote: str
+    source: str
     pip: float
 
     @property
     def ticker(self):
         return self.base + self.quote
     
+    def copy(self):
+        return CurrencyPair(self.base, self.quote, self.source, self.pip)
+
     def reverse(self):
         self.base, self.quote = self.quote, self.base
 
@@ -50,16 +54,9 @@ def _get_pip(base: str, quote: str) -> float:
     return 0.0001
 
 
-def make_pair(*args: str | list[str]) -> CurrencyPair:
-    if len(args) == 1:
-        if len(args[0]) != 6:
-            raise ValueError(f"Invalid ticker string '{args[0]}'")
-        base, quote = args[0][:3], args[0][3:]
-    elif len(args) == 2:
-        base, quote = args
-    else:
-        raise ValueError("Invalid arguments format")
-    
+def make_pair(ticker: str, source: str) -> CurrencyPair:
+    if len(ticker) != 6:
+        raise ValueError(f"Invalid ticker string '{ticker}'")
     base, quote = _sort_base_quote(base, quote)
     pip = _get_pip(base, quote)
-    return CurrencyPair(base, quote, pip)
+    return CurrencyPair(base, quote, pip, source)

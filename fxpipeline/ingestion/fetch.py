@@ -5,7 +5,7 @@ import pandas as pd
 from urllib3.exceptions import MaxRetryError
 
 from .loaders import get_loader, ForexPriceLoader, BatchDownloadMixin
-from .database import ForexPriceDatabase
+from ._OLD_database import ForexPriceDatabase
 from .data_request import make_recent_data_request, ForexPriceRequest
 
 
