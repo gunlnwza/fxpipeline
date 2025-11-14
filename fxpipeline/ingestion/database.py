@@ -46,7 +46,7 @@ class SQLiteDatabase(ForexPriceDatabase):
     def _create_alpha_vantage_table(self):
         self.conn.execute("""
         CREATE TABLE IF NOT EXISTS alpha_vantage_prices (
-            symbol TEXT,
+            ticker TEXT,
             timestamp DATETIME,
             open REAL,
             high REAL,
@@ -63,6 +63,8 @@ class SQLiteDatabase(ForexPriceDatabase):
 
     def save(self, data: ForexPrice):
         source = data.pair.source
+        table = f"{source}_prices"
+        df = data.df.copy()
         with self.conn:
             match source:
                 case "alpha_vantage":
@@ -73,19 +75,47 @@ class SQLiteDatabase(ForexPriceDatabase):
                     self._create_yfinance_table()
                 case _:
                     raise ValueError(f"Source '{source}' is not supported")
-            data.df.to_sql(f"{source}_prices", self.conn, if_exists="replace", index=False)
+            df.reset_index(inplace=True)
+            df.insert(0, "ticker", data.pair.ticker)
+            df.to_sql(table, self.conn, if_exists="replace", index=False)
 
     def load(self, pair: CurrencyPair) -> ForexPrice:
-        with self.conn:
-            df = pd.read_sql(f"SELECT * FROM {pair.source} WHERE ticker = {pair.ticker}", self.conn)
-        return ForexPrice(pair, df)
+        table = f"{pair.source}_prices"
+        ticker = pair.ticker
+        with self.conn as conn:
+            df = pd.read_sql(f'''
+                SELECT *
+                FROM {table}
+                WHERE ticker = "{ticker}";
+                ''',
+                conn, parse_dates=True, index_col="timestamp"
+            )
+        df.drop("ticker", axis=1, inplace=True)
+        return ForexPrice(pair.copy(), df)
 
     def last_price(self, pair: CurrencyPair) -> float:
-        with self.conn:
-            last_price = pd.read_sql(f"SELECT LAST(price) FROM {pair.source}_prices WHERE ticker = {pair.ticker}", self.conn)
+        table = f"{pair.source}_prices"
+        with self.conn as conn:
+            last_price = pd.read_sql(f'''
+                SELECT close FROM {table}
+                WHERE ticker = "{pair.ticker}"
+                ORDER BY timestamp DESC
+                LIMIT 1;
+                ''',
+                conn
+            )["close"].iloc[0]
         return last_price
 
     def last_timestamp(self, pair: CurrencyPair) -> pd.Timestamp:
-        with self.conn:
-            last_timestamp = pd.read_sql(f"SELECT LAST(timestamp) FROM {pair.source}_prices WHERE ticker = {pair.ticker}", self.conn)
-        return last_timestamp
+        table = f"{pair.source}_prices"
+        with self.conn as conn:
+            last_timestamp = pd.read_sql(f'''
+                SELECT timestamp
+                FROM {table}
+                WHERE ticker = "{pair.ticker}"
+                ORDER BY timestamp DESC
+                LIMIT 1;
+                ''',
+                conn
+            )["timestamp"].iloc[0]
+        return pd.Timestamp(last_timestamp)

@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 
 from ..data_request import ForexPriceRequest
+from ...core import ForexPrice
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +24,12 @@ class ForexPriceLoader(ABC):
         self.api_key = api_key
 
     @abstractmethod
-    def download(req: ForexPriceRequest) -> pd.DataFrame:
+    def download(req: ForexPriceRequest) -> ForexPrice:  # TODO: change concrete loaders to this
         """Download forex data from internet, can Errors"""
         pass
 
 
 class BatchDownloadMixin(ABC):
     @abstractmethod
-    def batch_download(reqs: list[ForexPriceRequest]) -> list[pd.DataFrame]:
+    def batch_download(reqs: list[ForexPriceRequest]) -> list[ForexPrice]:
         """Call download() in a loop, use min-max of Timestamp"""

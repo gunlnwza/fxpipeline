@@ -16,7 +16,7 @@ class CurrencyPair:
     @property
     def ticker(self):
         return self.base + self.quote
-    
+
     def copy(self):
         return CurrencyPair(self.base, self.quote, self.source, self.pip)
 
@@ -24,7 +24,7 @@ class CurrencyPair:
         self.base, self.quote = self.quote, self.base
 
     def __repr__(self):
-        return f"CurrencyPair({self.base}, {self.quote}, {self.pip})"
+        return f"CurrencyPair({self.base}, {self.quote}, {self.source}, {self.pip})"
 
     def __str__(self):
         return self.ticker
@@ -57,6 +57,7 @@ def _get_pip(base: str, quote: str) -> float:
 def make_pair(ticker: str, source: str) -> CurrencyPair:
     if len(ticker) != 6:
         raise ValueError(f"Invalid ticker string '{ticker}'")
+    base, quote = ticker[:3], ticker[3:]
     base, quote = _sort_base_quote(base, quote)
     pip = _get_pip(base, quote)
-    return CurrencyPair(base, quote, pip, source)
+    return CurrencyPair(base, quote, source, pip)
