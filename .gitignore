@@ -74,3 +74,4 @@ notebooks/
 # Project-specific trash or scratch
 # =====================================
 .trash/
+ref/
