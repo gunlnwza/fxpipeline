@@ -20,19 +20,20 @@
 
 import os
 
+import pandas as pd
 from dotenv import load_dotenv
 
 from .loaders import get_loader
 from .database import SQLiteDatabase
-from ..core import ForexPrice
-
+from ..core import ForexPrice, make_pair
 
 load_dotenv()
 
 
-def fetch_forex_prices(ticker: str, source: str, start: str, end: str) -> list[ForexPrice]:
-    loader = get_loader(source)
+def fetch_forex_price(ticker: str, source: str, start: str, end: str) -> ForexPrice:
     db = SQLiteDatabase(os.getenv("CACHES_PATH"))
-
     if db.have(ticker, source, start, end):
-        return
+        return db.load(ticker, source)
+
+    loader = get_loader(source)
+    loader.download(make_pair(ticker), pd.Timestamp(start), pd.Timestamp(end))

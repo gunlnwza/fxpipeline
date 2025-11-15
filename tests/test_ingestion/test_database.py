@@ -72,6 +72,13 @@ def test_save_and_load(db, pair, data, data_2):
     assert loaded_data_2.source == "source_2"
 
 
+def test_load_date_range(populated_db, pair):
+    data = populated_db.load(pair, "source",
+                               start=pd.Timestamp("2025-01-02"),
+                               end=pd.Timestamp("2025-01-04"))
+    assert data.df.index.to_list() == [pd.Timestamp(f"2025-01-0{i}") for i in (2, 3, 4)]
+
+
 def test_last_value(populated_db, pair):
     assert populated_db.last_price(pair, "source") == 24
     assert populated_db.last_timestamp(pair, "source") == pd.Timestamp("2025-01-05")

@@ -15,7 +15,8 @@ class ForexPriceDatabase(ABC):
         """Save `data`, append to table, overwrite existing rows"""
 
     @abstractmethod
-    def load(self, pair: CurrencyPair, source: str) -> ForexPrice:
+    def load(self, pair: CurrencyPair, source: str,
+             start: pd.Timestamp | None = None, end: pd.Timestamp | None = None) -> ForexPrice:
         """Load all historical data of `pair`"""
 
     @abstractmethod
@@ -66,12 +67,24 @@ class SQLiteDatabase(ForexPriceDatabase):
             df = df[["source", "ticker", "timestamp", "open", "high", "low", "close", "volume"]]
             df.to_sql("Prices", self.conn, if_exists="append", index=False)
 
-    def load(self, pair: CurrencyPair, source: str) -> ForexPrice:
-        df = pd.read_sql("""
+    def load(self, pair: CurrencyPair, source: str,
+             start: pd.Timestamp | None = None, end: pd.Timestamp | None = None) -> ForexPrice:
+        sql = """
             SELECT *
             FROM Prices
-            WHERE source = ? AND ticker = ?;
-            """, self.conn, params=(source, pair.ticker), index_col="timestamp", parse_dates=True)
+            WHERE source = ? AND ticker = ?
+        """
+        params = [source, pair.ticker]
+
+        if start is not None:
+            sql += " AND timestamp >= ?"
+            params.append(start.strftime("%Y-%m-%d %H:%M:%S"))
+
+        if end is not None:
+            sql += " AND timestamp <= ?"
+            params.append(end.strftime("%Y-%m-%d %H:%M:%S"))
+
+        df = pd.read_sql(sql, self.conn, params=params, index_col="timestamp", parse_dates=True)
         df.index = pd.to_datetime(df.index)
         df.drop(["source", "ticker"], axis=1, inplace=True)
         return ForexPrice(pair.copy(), source, df)
