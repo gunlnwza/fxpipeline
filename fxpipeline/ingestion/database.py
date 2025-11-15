@@ -12,23 +12,24 @@ logger = logging.getLogger(__name__)
 class ForexPriceDatabase(ABC):
     @abstractmethod
     def save(self, data: ForexPrice):
-        """Save 'data', append to table, overwrite existing rows"""
-        pass
+        """Save `data`, append to table, overwrite existing rows"""
 
     @abstractmethod
     def load(self, pair: CurrencyPair, source: str) -> ForexPrice:
-        """Load all historical data of 'pair'"""
-        pass
+        """Load all historical data of `pair`"""
 
     @abstractmethod
     def last_price(self, pair: CurrencyPair, source: str) -> float:
-        """Get only last price of 'pair'"""
-        pass
+        """Get only last price of `pair`"""
 
     @abstractmethod
     def last_timestamp(self, pair: CurrencyPair, source: str) -> pd.Timestamp:
-        """Get only last timestamp of 'pair"""
-        pass
+        """Get only last timestamp of `pair`"""
+
+    @abstractmethod
+    def have(self, pair: CurrencyPair, source: str,
+             start: pd.Timestamp, end: pd.Timestamp) -> bool:
+        """True if have `source`'s `pair` with datetimes [`start`, `end`]"""
 
 
 class SQLiteDatabase(ForexPriceDatabase):
@@ -56,8 +57,7 @@ class SQLiteDatabase(ForexPriceDatabase):
                     volume INT,
                     PRIMARY KEY (source, ticker, timestamp) ON CONFLICT REPLACE
                 );
-                """
-            )
+                """)
 
             df = data.df.copy()
             df.reset_index(inplace=True)
@@ -71,9 +71,7 @@ class SQLiteDatabase(ForexPriceDatabase):
             SELECT *
             FROM Prices
             WHERE source = ? AND ticker = ?;
-            """,
-            self.conn, params=(source, pair.ticker), index_col="timestamp", parse_dates=True
-        )
+            """, self.conn, params=(source, pair.ticker), index_col="timestamp", parse_dates=True)
         df.index = pd.to_datetime(df.index)
         df.drop(["source", "ticker"], axis=1, inplace=True)
         return ForexPrice(pair.copy(), source, df)
@@ -85,21 +83,33 @@ class SQLiteDatabase(ForexPriceDatabase):
             WHERE source = ? AND ticker = ?
             ORDER BY timestamp DESC
             LIMIT 1;
-            """,
-            (source, pair.ticker)
-        )
+            """, (source, pair.ticker))
         res = cursor.fetchone()
         return res[0] if res else None
 
     def last_timestamp(self, pair: CurrencyPair, source: str) -> pd.Timestamp:
         cursor = self.conn.execute("""
-                SELECT timestamp
-                FROM Prices
-                WHERE source = ? AND ticker = ?
-                ORDER BY timestamp DESC
-                LIMIT 1;
-            """,
-            (source, pair.ticker)
-        )
+            SELECT timestamp
+            FROM Prices
+            WHERE source = ? AND ticker = ?
+            ORDER BY timestamp DESC
+            LIMIT 1;
+            """, (source, pair.ticker))
         res = cursor.fetchone()
         return pd.Timestamp(res[0]) if res else None
+
+    def have(self, pair: CurrencyPair, source: str,
+             start: pd.Timestamp, end: pd.Timestamp) -> bool:
+        cursor = self.conn.execute("""
+            SELECT MIN(timestamp), MAX(timestamp)
+            FROM Prices
+            WHERE source = ? AND ticker = ?
+            """, (source, pair.ticker))
+
+        res = cursor.fetchone()
+        min_time, max_time = res
+
+        if min_time is None or max_time is None:
+            return False  # no rows
+
+        return pd.Timestamp(min_time) <= start and pd.Timestamp(max_time) >= end

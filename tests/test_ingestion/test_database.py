@@ -75,3 +75,12 @@ def test_save_and_load(db, pair, data, data_2):
 def test_last_value(populated_db, pair):
     assert populated_db.last_price(pair, "source") == 24
     assert populated_db.last_timestamp(pair, "source") == pd.Timestamp("2025-01-05")
+
+
+def test_have(populated_db, pair):
+    start = pd.Timestamp("2025-01-01")
+    end = pd.Timestamp("2025-01-05")
+    assert populated_db.have(pair, "source", start, end) is True
+
+    end = pd.Timestamp("2025-01-06")
+    assert populated_db.have(pair, "source", start, end) is False

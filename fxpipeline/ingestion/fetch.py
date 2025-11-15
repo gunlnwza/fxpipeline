@@ -17,3 +17,22 @@
 #                 if i == retries:
 #                     break
 #                 time.sleep(max_retry_wait)
+
+import os
+
+from dotenv import load_dotenv
+
+from .loaders import get_loader
+from .database import SQLiteDatabase
+from ..core import ForexPrice
+
+
+load_dotenv()
+
+
+def fetch_forex_prices(ticker: str, source: str, start: str, end: str) -> list[ForexPrice]:
+    loader = get_loader(source)
+    db = SQLiteDatabase(os.getenv("CACHES_PATH"))
+
+    if db.have(ticker, source, start, end):
+        return

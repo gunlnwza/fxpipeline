@@ -44,7 +44,6 @@ def test_yfinance_download(mock_download):
     pd.testing.assert_frame_equal(data.df, expected)
 
 
-
 @patch("fxpipeline.ingestion.loaders.yfinance_wrapper.yf.download")
 def test_yfinance_batch_download(mock_download):
     # using group_by="ticker"

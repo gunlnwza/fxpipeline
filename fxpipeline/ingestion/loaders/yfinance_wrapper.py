@@ -47,7 +47,7 @@ class YFinanceForex(ForexPriceLoader):
             "Close": "close", "Volume": "volume"}, inplace=True)
         df.index.name = "timestamp"
         return df
-    
+
     def batch_download(self, pairs: list[CurrencyPair], start: pd.Timestamp,
                        end: pd.Timestamp, interval: str = "D1") -> list[ForexPrice]:
         logger.info(f"Downloading '{[pair.ticker for pair in pairs]}' with yfinance")

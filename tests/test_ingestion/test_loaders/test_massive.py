@@ -13,7 +13,6 @@ def test_massive_download(mock_restclient):
     mock_restclient.return_value = mock_client
 
     # Fake aggregation data like Polygon would return
-    
     fake_aggs = [
         {"timestamp": 1735689600000, "open": 1, "high": 2, "low": 3, "close": 4,
          "volume": 10, "vwap": 5, "transactions": 6, "otc": 7},
