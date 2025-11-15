@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class AlphaVantageForex(ForexPriceLoader):
-    def __init__(self, api_key):
-        super().__init__(api_key)
+    def __init__(self, api_key: str):
+        super().__init__("alpha_vantage", api_key)
 
     @staticmethod
     def _should_download_full(start: pd.Timestamp, end: pd.Timestamp) -> bool:
@@ -68,4 +68,4 @@ class AlphaVantageForex(ForexPriceLoader):
 
         df = pd.read_csv(StringIO(res.text), index_col="timestamp", parse_dates=True)
         df = self._clean(df)
-        return ForexPrice(pair.copy(), "alpha_vantage", df)
+        return ForexPrice(pair.copy(), self.name, df)

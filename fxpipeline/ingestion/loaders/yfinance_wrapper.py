@@ -12,40 +12,38 @@ logger = logging.getLogger(__name__)
 
 
 class YFinanceForex(ForexPriceLoader):
-    def __init__(self, api_key=None):
-        super().__init__(api_key)
+    def __init__(self):
+        super().__init__("yfinance", None)
 
     @staticmethod
     def _clean(df: pd.DataFrame) -> pd.DataFrame:
         df.columns = df.columns.droplevel("Ticker")
-        df.rename(columns={
-            "Open": "open", "High": "high", "Low": "low",
-            "Close": "close", "Volume": "volume"}, inplace=True)
-        df = df[["open", "high", "low", "close", "volume"]]
+        df = df[["Open", "High", "Low", "Close", "Volume"]]
+        df.columns = ["open", "high", "low", "close", "volume"]
         df.index.name = "timestamp"
         return df
 
-    def download(self, ticker: CurrencyPair, start: pd.Timestamp,
+    def download(self, pair: CurrencyPair, start: pd.Timestamp,
                  end: pd.Timestamp, interval: str = "1d") -> ForexPrice:
-        logger.info(f"Downloading '{req}' with yfinance")
+        logger.info(f"Downloading '{pair}' with yfinance")
 
-        ticker = f"{req.ticker}=X"
+        ticker = f"{pair}=X"
         with warnings.catch_warnings(record=True):
             warnings.simplefilter("ignore")
-            df = yf.download(ticker, req.start, req.end, progress=False)
+            df = yf.download(ticker, start, end, group_by="ticker", progress=False)
 
         df = self._clean(df)
-        return df
+        return ForexPrice(pair.copy(), self.name, df)
 
-    @staticmethod
-    def _batch_clean(df: pd.DataFrame) -> pd.DataFrame:
-        df.rename(columns={
-            "Open": "open", "High": "high", "Low": "low",
-            "Close": "close", "Volume": "volume"}, inplace=True)
-        df.index.name = "timestamp"
-        return df
+    # @staticmethod
+    # def _batch_clean(df: pd.DataFrame) -> pd.DataFrame:
+    #     df.rename(columns={
+    #         "Open": "open", "High": "high", "Low": "low",
+    #         "Close": "close", "Volume": "volume"}, inplace=True)
+    #     df.index.name = "timestamp"
+    #     return df
     
-    def batch_download(self, tickers: list[str], start: pd.Timestamp,
+    def batch_download(self, pairs: list[str], start: pd.Timestamp,
                        end: pd.Timestamp, interval: str = "D1") -> list[ForexPrice]:
         pass
 

@@ -13,7 +13,7 @@ class MassiveForex(ForexPriceLoader):
     """Polygon rebranded themselves as Massive"""
 
     def __init__(self, api_key):
-        super().__init__(api_key)
+        super().__init__("massive", api_key)
 
     @staticmethod
     def _clean(df: pd.DataFrame) -> pd.DataFrame:
@@ -35,4 +35,4 @@ class MassiveForex(ForexPriceLoader):
 
         df = pd.DataFrame(aggs)
         df = self._clean(df)
-        return ForexPrice(pair.copy(), "massive", df)
+        return ForexPrice(pair.copy(), self.name, df)

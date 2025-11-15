@@ -19,7 +19,8 @@ class NotDownloadedError(Exception):
 
 
 class ForexPriceLoader(ABC):
-    def __init__(self, api_key: str):
+    def __init__(self, name: str, api_key: str):
+        self.name = name
         self.api_key = api_key
 
     @abstractmethod

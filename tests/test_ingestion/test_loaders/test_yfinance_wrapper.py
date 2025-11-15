@@ -14,16 +14,23 @@ def test_yfinance_download(mock_download):
             [2, 2, 2, 2, 20],
             [3, 3, 3, 3, 30]
         ],
-        columns=cols,
+        columns=pd.MultiIndex.from_tuples(  # using group_by="ticker"
+            [("ABCDEF=X", col) for col in cols],
+            names=["Ticker", "Price"]
+        ),
         index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="Date")
     )
-    df.columns = pd.MultiIndex.from_tuples([(col, "ABCDEF=X") for col in cols])
-    df.columns.names = ["Price", "Ticker"]
 
     mock_download.return_value = df
 
     loader = YFinanceForex()
-    df = loader.download(None, pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03"))
+    pair = make_pair("ABCDEF")
+    data = loader.download(pair, pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03"))
+
+    assert data.pair == pair
+    assert data.pair is not pair
+
+    assert data.source == "yfinance"
 
     expected = pd.DataFrame([
             [1, 1, 1, 1, 10],
@@ -33,7 +40,7 @@ def test_yfinance_download(mock_download):
         columns = ["open", "high", "low", "close", "volume"],
         index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="timestamp")
     )
-    pd.testing.assert_frame_equal(df, expected)
+    pd.testing.assert_frame_equal(data.df, expected)
 
 
 
