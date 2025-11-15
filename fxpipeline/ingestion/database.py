@@ -18,7 +18,7 @@ class ForexPriceDatabase(ABC):
     @abstractmethod
     def load(self, pair: CurrencyPair, source: str,
              start: pd.Timestamp | None = None, end: pd.Timestamp | None = None) -> ForexPrice:
-        """Load all historical data of `pair`"""
+        """Load historical data of `pair` in range [`start`, `end`]"""
 
     @abstractmethod
     def last_price(self, pair: CurrencyPair, source: str) -> float:

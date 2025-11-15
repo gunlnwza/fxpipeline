@@ -9,10 +9,8 @@ from .database import SQLiteDatabase
 from ..core import ForexPrice, make_pair, CurrencyPair
 
 load_dotenv()
-
-CACHES_PATH = os.getenv("CACHES_PATH")
-
 logger = logging.getLogger(__file__)
+db = SQLiteDatabase(f"{os.getenv("CACHES_PATH")}/prices.db")
 
 
 def _convert_start_end(start, end):
@@ -31,13 +29,11 @@ def fetch_forex_price(ticker: str | CurrencyPair, source: str,
     pair = make_pair(ticker)
     start, end = _convert_start_end(start, end)
 
-    db = SQLiteDatabase(f"{CACHES_PATH}/prices.db")
-    loader = get_loader(source)
-
     if db.have(pair, source, start, end):
         logger.debug(f"Have {source}'s {pair} in cache")
         data = db.load(pair, source)
     else:
+        loader = get_loader(source)
         data = loader.download(pair, start, end)
         db.save(data)
 
@@ -45,14 +41,12 @@ def fetch_forex_price(ticker: str | CurrencyPair, source: str,
 
 
 def fetch_forex_prices(tickers: list[str | CurrencyPair], source: str,
-                      start: str | None = None,
-                      end: str | None = None) -> list[ForexPrice]:
+                       start: str | None = None,
+                       end: str | None = None) -> list[ForexPrice]:
     pairs = [make_pair(t) for t in tickers]
     start, end = _convert_start_end(start, end)
 
-    db = SQLiteDatabase(f"{CACHES_PATH}/prices.db")
     loader = get_loader(source)
-
     res = []
     for pair in pairs:
         if db.have(pair, source, start, end):
@@ -63,4 +57,24 @@ def fetch_forex_prices(tickers: list[str | CurrencyPair], source: str,
             db.save(data)
         res.append(data)
 
+    return res
+
+
+def load_forex_price(ticker: str, source: str,
+                      start: str | None = None,
+                      end: str | None = None) -> ForexPrice:
+    pair = make_pair(ticker)
+    start, end = _convert_start_end(start, end)
+
+    data = db.load(pair, source, start, end)
+    return data
+
+
+def load_forex_prices(tickers: list[str | CurrencyPair], source: str,
+                      start: str | None = None,
+                      end: str | None = None) -> list[ForexPrice]:
+    pairs = [make_pair(t) for t in tickers]
+    start, end = _convert_start_end(start, end)
+
+    res = [db.load(pair, source, start, end) for pair in pairs]
     return res
