@@ -42,55 +42,40 @@ class SQLiteDatabase(ForexPriceDatabase):
         self.conn.close()
         self.conn = None
 
-    def _create_alpha_vantage_table(self):
-        self.conn.execute("""
-        CREATE TABLE IF NOT EXISTS alpha_vantage_prices (
-            ticker TEXT,
-            timestamp DATETIME,
-            open REAL,
-            high REAL,
-            low REAL,
-            close REAL
-        );
-        """)
-
-    def _create_massive_table(self):
-        self.conn.execute()
-
-    def _create_yfinance_table(self):
-        self.conn.execute()
-
     def save(self, data: ForexPrice):
-        source = data.pair.source
-        table = f"{source}_prices"
-        df = data.df.copy()
         with self.conn:
-            match source:
-                case "alpha_vantage":
-                    self._create_alpha_vantage_table()
-                case "massive":
-                    self._create_massive_table()
-                case "yfinance":
-                    self._create_yfinance_table()
-                case _:
-                    raise ValueError(f"Source '{source}' is not supported")
-            df.reset_index(inplace=True)
-            df.insert(0, "ticker", data.pair.ticker)
-            df.to_sql(table, self.conn, if_exists="replace", index=False)
-
-    def load(self, pair: CurrencyPair) -> ForexPrice:
-        table = f"{pair.source}_prices"
-        ticker = pair.ticker
-        with self.conn as conn:
-            df = pd.read_sql(f'''
-                SELECT *
-                FROM {table}
-                WHERE ticker = "{ticker}";
-                ''',
-                conn, parse_dates=True, index_col="timestamp"
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS Prices (
+                    source TEXT,
+                    ticker TEXT,
+                    timestamp DATETIME,
+                    open REAL,
+                    high REAL,
+                    low REAL,
+                    close REAL,
+                    volume INT,
+                    PRIMARY KEY (source, ticker, timestamp) ON CONFLICT REPLACE
+                );
+                """
             )
-        df.drop("ticker", axis=1, inplace=True)
-        return ForexPrice(pair.copy(), df)
+
+            df = data.df.copy()
+            df.reset_index(inplace=True)
+            df["source"] = data.source
+            df["ticker"] = data.pair.ticker
+            df = df[["source", "ticker", "timestamp", "open", "high", "low", "close", "volume"]]
+            df.to_sql("Prices", self.conn, if_exists="append", index=False)
+
+    def load(self, pair: CurrencyPair, source: str) -> ForexPrice:
+        df = pd.read_sql("""
+            SELECT *
+            FROM Prices
+            WHERE source = ? AND ticker = ?;
+            """,
+            conn, params=(source, pair.ticker), index_col="timestamp", parse_dates=True
+        )
+        df.drop(["source, ticker"], axis=1, inplace=True)
+        return ForexPrice(pair.copy(), source, df)
 
     def last_price(self, pair: CurrencyPair) -> float:
         table = f"{pair.source}_prices"
