@@ -13,14 +13,13 @@ Database Jobs
 - Fetch last timestamp
 """
 
-
 @pytest.fixture
 def pair():
     return make_pair("ABCDEF")
 
 
 @pytest.fixture
-def data(pair):
+def alpha_vantage_data() -> ForexPrice:
     df = pd.DataFrame([
             [1, 2, 3, 4, 5],
             [6, 7, 8, 9, 10],
@@ -28,10 +27,11 @@ def data(pair):
             [16, 17, 18, 19, 20],
             [21, 22, 23, 24, 25]
         ],
-        columns=["open", "high", "low", "close", "volume"],
-        index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in range(1, 6)], name="timestamp")
+        columns=["open", "high", "low", "close"],
+        index=["2025-10-30", "2025-10-31", "2025-11-03", "2025-11-04", "2025-11-05"]
     )
-    return ForexPrice(pair, "source", df)
+    df.index.name = "timestamp"
+    return ForexPrice(make_pair("EURUSD", "alpha_vantage"), df)
 
 
 @pytest.fixture
@@ -51,10 +51,9 @@ def populated_db(data):
 
 def test_save_and_load(db, data, pair):
     db.save(data)
-    assert "ticker" not in data.df.columns
 
-    loaded_data = db.load(pair, "source")
-
+    loaded_data = db.load(pair)
+    assert loaded_data.pair == pair
     pd.testing.assert_frame_equal(loaded_data.df, data.df, rtol=1e-6, atol=1e-6)
 
     assert loaded_data.pair == data.pair
