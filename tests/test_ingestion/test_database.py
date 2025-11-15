@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from fxpipeline.core import ForexPrice, make_pair
+from fxpipeline.core import ForexPrice, CurrencyPair, make_pair
 from fxpipeline.ingestion.database import SQLiteDatabase
 
 """
@@ -13,25 +13,32 @@ Database Jobs
 - Fetch last timestamp
 """
 
+
 @pytest.fixture
-def pair():
+def pair() -> CurrencyPair:
     return make_pair("ABCDEF")
 
 
 @pytest.fixture
-def alpha_vantage_data() -> ForexPrice:
+def data(pair) -> ForexPrice:
     df = pd.DataFrame([
-            [1, 2, 3, 4, 5],
-            [6, 7, 8, 9, 10],
-            [11, 12, 13, 14, 15],
-            [16, 17, 18, 19, 20],
-            [21, 22, 23, 24, 25]
+            [1.0, 2.0, 3.0, 4.0, 5],
+            [6.0, 7.0, 8.0, 9.0, 10],
+            [11.0, 12.0, 13.0, 14.0, 15],
+            [16.0, 17.0, 18.0, 19.0, 20],
+            [21.0, 22.0, 23.0, 24.0, 25]
         ],
-        columns=["open", "high", "low", "close"],
-        index=["2025-10-30", "2025-10-31", "2025-11-03", "2025-11-04", "2025-11-05"]
+        columns=["open", "high", "low", "close", "volume"],
+        index=pd.Index([pd.Timestamp(f"2025-01-0{i}") for i in range(1, 6)], name="timestamp"),
     )
-    df.index.name = "timestamp"
-    return ForexPrice(make_pair("EURUSD", "alpha_vantage"), df)
+    return ForexPrice(pair, "source", df)
+
+
+@pytest.fixture
+def data_2(data) -> ForexPrice:
+    data = data.copy()
+    data.source = "source_2"
+    return data
 
 
 @pytest.fixture
@@ -49,17 +56,22 @@ def populated_db(data):
     db.close()
 
 
-def test_save_and_load(db, data, pair):
+def test_save_and_load(db, pair, data, data_2):
     db.save(data)
+    db.save(data_2)
 
-    loaded_data = db.load(pair)
+    loaded_data = db.load(pair, "source")
     assert loaded_data.pair == pair
+    assert loaded_data.pair is not pair
+    assert loaded_data.source == "source"
     pd.testing.assert_frame_equal(loaded_data.df, data.df, rtol=1e-6, atol=1e-6)
 
-    assert loaded_data.pair == data.pair
-    assert loaded_data.pair is not data.pair
+    loaded_data_2 = db.load(pair, "source_2")
+    assert loaded_data_2.pair == data.pair
+    assert loaded_data_2.pair is not data.pair
+    assert loaded_data_2.source == "source_2"
 
 
 def test_last_value(populated_db, pair):
-    assert populated_db.last_price(pair) == 24
-    assert populated_db.last_timestamp(pair) == pd.Timestamp("2024-01-05")
+    assert populated_db.last_price(pair, "source") == 24
+    assert populated_db.last_timestamp(pair, "source") == pd.Timestamp("2025-01-05")

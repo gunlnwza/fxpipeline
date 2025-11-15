@@ -88,7 +88,8 @@ class SQLiteDatabase(ForexPriceDatabase):
             """,
             (source, pair.ticker)
         )
-        return cursor.fetchone()
+        res = cursor.fetchone()
+        return res[0] if res else None
 
     def last_timestamp(self, pair: CurrencyPair, source: str) -> pd.Timestamp:
         cursor = self.conn.execute("""
@@ -100,4 +101,5 @@ class SQLiteDatabase(ForexPriceDatabase):
             """,
             (source, pair.ticker)
         )
-        return cursor.fetchone()
+        res = cursor.fetchone()
+        return pd.Timestamp(res[0]) if res else None

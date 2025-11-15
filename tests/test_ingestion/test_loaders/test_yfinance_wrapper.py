@@ -19,14 +19,14 @@ def test_yfinance_download(mock_download):
             [("ABCDEF=X", col) for col in cols],
             names=["Ticker", "Price"]
         ),
-        index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="Date")
+        index=pd.Index([pd.Timestamp(f"2025-01-0{i}") for i in (1, 2, 3)], name="Date")
     )
 
     mock_download.return_value = df
 
     loader = YFinanceForex()
     pair = make_pair("ABCDEF")
-    data = loader.download(pair, pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03"))
+    data = loader.download(pair, pd.Timestamp("2025-01-01"), pd.Timestamp("2025-01-03"))
 
     assert data.pair == pair
     assert data.pair is not pair
@@ -39,7 +39,7 @@ def test_yfinance_download(mock_download):
             [11, 12, 13, 14, 30]
         ],
         columns=["open", "high", "low", "close", "volume"],
-        index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="timestamp")
+        index=pd.Index([pd.Timestamp(f"2025-01-0{i}") for i in (1, 2, 3)], name="timestamp")
     )
     pd.testing.assert_frame_equal(data.df, expected)
 
@@ -59,7 +59,7 @@ def test_yfinance_batch_download(mock_download):
             [(ticker, col) for ticker in tickers for col in cols],
             names=["Ticker", "Price"]
         ),
-        index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="Date")
+        index=pd.Index([pd.Timestamp(f"2025-01-0{i}") for i in (1, 2, 3)], name="Date")
     )
 
     mock_download.return_value = df
@@ -69,7 +69,7 @@ def test_yfinance_batch_download(mock_download):
     pair_2 = make_pair("ABCXYZ")
     lst = loader.batch_download(
         [pair_1, pair_2],
-        pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")
+        pd.Timestamp("2025-01-01"), pd.Timestamp("2025-01-03")
     )
 
     assert isinstance(lst, list)
@@ -87,7 +87,7 @@ def test_yfinance_batch_download(mock_download):
             [11, 12, 13, 14, 300]
         ],
         columns=["open", "high", "low", "close", "volume"],
-        index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="timestamp")
+        index=pd.Index([pd.Timestamp(f"2025-01-0{i}") for i in (1, 2, 3)], name="timestamp")
     )
     pd.testing.assert_frame_equal(lst[0].df, expected)
 
@@ -103,6 +103,6 @@ def test_yfinance_batch_download(mock_download):
             [61, 62, 63, 64, 300]
         ],
         columns=["open", "high", "low", "close", "volume"],
-        index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="timestamp")
+        index=pd.Index([pd.Timestamp(f"2025-01-0{i}") for i in (1, 2, 3)], name="timestamp")
     )
     pd.testing.assert_frame_equal(lst[1].df, expected)

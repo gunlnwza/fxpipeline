@@ -10,3 +10,6 @@ class ForexPrice:
     pair: CurrencyPair
     source: str
     df: pd.DataFrame
+
+    def copy(self):
+        return ForexPrice(self.pair, self.source, self.df.copy())
