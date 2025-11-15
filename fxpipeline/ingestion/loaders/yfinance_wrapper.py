@@ -27,7 +27,7 @@ class YFinanceForex(ForexPriceLoader):
 
     def download(self, pair: CurrencyPair, start: pd.Timestamp,
                  end: pd.Timestamp, interval: str = "1d") -> ForexPrice:
-        logger.debug(f"Downloading '{pair}' with yfinance")
+        logger.debug(f"Downloading {pair} with yfinance")
 
         ticker = f"{pair}=X"
         with warnings.catch_warnings(record=True):
@@ -48,7 +48,7 @@ class YFinanceForex(ForexPriceLoader):
 
     def batch_download(self, pairs: list[CurrencyPair], start: pd.Timestamp,
                        end: pd.Timestamp, interval: str = "D1") -> list[ForexPrice]:
-        logger.debug(f"Downloading '{[pair.ticker for pair in pairs]}' with yfinance")
+        logger.debug(f"Downloading {[pair.ticker for pair in pairs]} with yfinance")
 
         tickers = [f"{pair}=X" for pair in pairs]
         with warnings.catch_warnings(record=True):

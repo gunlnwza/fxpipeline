@@ -45,7 +45,7 @@ class AlphaVantageForex(ForexPriceLoader):
 
         NOTE: 4H is not supported by the API
         """
-        logger.debug(f"Downloading '{pair}' with Alpha Vantage API")
+        logger.debug(f"Downloading {pair} with Alpha Vantage API")
 
         params = {
             "apikey": self.api_key,

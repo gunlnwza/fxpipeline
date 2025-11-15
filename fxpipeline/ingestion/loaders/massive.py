@@ -1,6 +1,8 @@
 import logging
-import pandas as pd
+import time
 
+import pandas as pd
+from urllib3.exceptions import MaxRetryError
 from polygon import RESTClient
 
 from .base import ForexPriceLoader, NotDownloadedError
@@ -24,13 +26,25 @@ class MassiveForex(ForexPriceLoader):
 
     def download(self, pair: CurrencyPair, start: pd.Timestamp,
                  end: pd.Timestamp, interval: str = "1d") -> ForexPrice:
-        logger.debug(f"Downloading '{pair} with Massive API")
+        logger.debug(f"Downloading {pair} with Massive API")
 
-        aggs = []
+        aggs = None
         client = RESTClient(self.api_key)
-        for a in client.list_aggs(f"C:{pair}", 1, "day", start, end, adjusted="true", sort="asc"):
-            aggs.append(a)
-        if not aggs:
+        retries = 3
+        time_wait = 12
+        for i in range(retries):
+            try:
+                aggs = list(client.list_aggs(
+                f"C:{pair}", 1, "day", start, end, adjusted="true", sort="asc"
+                ))
+            except MaxRetryError:
+                if i == retries - 1:
+                    break
+                logger.debug(f"Massive API max retries exceeded (attempt={i + 1}), "
+                             f"retrying in {time_wait}s")
+                time.sleep(time_wait)
+
+        if aggs is None:
             raise NotDownloadedError("Massive: data is not downloaded")
 
         df = pd.DataFrame(aggs)

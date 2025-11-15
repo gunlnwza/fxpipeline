@@ -16,9 +16,9 @@ def config_logging(debug):
     )
 
     logging_levels = {
-        logging.DEBUG: ("loaders",),
-        logging.INFO: ("yfinance", "peewee", "urllib3", "charset_normalizer"),
-        logging.WARNING: ("requests",),
+        logging.DEBUG: (),
+        logging.INFO: ("requests", "yfinance", "peewee", "urllib3", "charset_normalizer"),
+        logging.WARNING: (),
         logging.ERROR: ()
     }
     for level, packages in logging_levels.items():
@@ -33,7 +33,7 @@ def main():
     parser.add_argument("-s", "--source", default="yfinance")
     parser.add_argument("--start")
     parser.add_argument("--end")
-    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--debug", action="store_false")
     args = parser.parse_args()
 
     handle_sigint()
@@ -41,10 +41,10 @@ def main():
 
     # tickers = args.tickers
     # if args.tickers == ["major"]:
-        # tickers = ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY"]
+    # tickers = ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY"]
 
-    fetch_forex_price(args.ticker, args.source, args.start, args.end)
-
+    data = fetch_forex_price(args.ticker, args.source, args.start, args.end)
+    print(data)
 
 if __name__ == "__main__":
     main()

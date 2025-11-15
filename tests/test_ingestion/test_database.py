@@ -74,8 +74,8 @@ def test_save_and_load(db, pair, data, data_2):
 
 def test_load_date_range(populated_db, pair):
     data = populated_db.load(pair, "source",
-                               start=pd.Timestamp("2025-01-02"),
-                               end=pd.Timestamp("2025-01-04"))
+                             start=pd.Timestamp("2025-01-02"),
+                             end=pd.Timestamp("2025-01-04"))
     assert data.df.index.to_list() == [pd.Timestamp(f"2025-01-0{i}") for i in (2, 3, 4)]
 
 

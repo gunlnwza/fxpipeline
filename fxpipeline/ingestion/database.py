@@ -1,5 +1,6 @@
 import logging
 import sqlite3
+from pathlib import Path
 from abc import ABC, abstractmethod
 
 import pandas as pd
@@ -35,7 +36,11 @@ class ForexPriceDatabase(ABC):
 
 class SQLiteDatabase(ForexPriceDatabase):
     def __init__(self, database: str):
+        path = Path(database)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
         self.conn = sqlite3.connect(database)
+        self.db = database
 
         self._create_prices_table_if_not_exist()
 
@@ -70,6 +75,7 @@ class SQLiteDatabase(ForexPriceDatabase):
         df = df[["source", "ticker", "timestamp", "open", "high", "low", "close", "volume"]]
         with self.conn:
             df.to_sql("Prices", self.conn, if_exists="append", index=False)
+            logger.debug(f"Save {data.pair} to '{self.db}'")
 
     def load(self, pair: CurrencyPair, source: str,
              start: pd.Timestamp | None = None, end: pd.Timestamp | None = None) -> ForexPrice:
@@ -117,6 +123,15 @@ class SQLiteDatabase(ForexPriceDatabase):
 
     def have(self, pair: CurrencyPair, source: str,
              start: pd.Timestamp, end: pd.Timestamp) -> bool:
+        # adjust if tips are weekends
+        while start.weekday() >= 5:
+            start += pd.Timedelta(days=1)
+        start = start.normalize()
+
+        while end.weekday() >= 5:
+            end -= pd.Timedelta(days=1)
+        end = end.normalize()
+
         cursor = self.conn.execute("""
             SELECT MIN(timestamp), MAX(timestamp)
             FROM Prices
