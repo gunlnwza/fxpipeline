@@ -26,7 +26,7 @@ class AlphaVantageForex(ForexPriceLoader):
         return df
 
     def download(self, pair: CurrencyPair, start: pd.Timestamp,
-                 end: pd.Timestamp, interval: str = "D1") -> ForexPrice:
+                 end: pd.Timestamp, interval: str = "1d") -> ForexPrice:
         """
         Download price from Alpha Vantage
 
