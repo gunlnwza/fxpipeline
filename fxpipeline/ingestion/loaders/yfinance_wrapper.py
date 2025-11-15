@@ -26,7 +26,7 @@ class YFinanceForex(ForexPriceLoader):
         return df
 
     def download(self, ticker: CurrencyPair, start: pd.Timestamp,
-                 end: pd.Timestamp, interval: str = "D1") -> ForexPrice:
+                 end: pd.Timestamp, interval: str = "1d") -> ForexPrice:
         logger.info(f"Downloading '{req}' with yfinance")
 
         ticker = f"{req.ticker}=X"

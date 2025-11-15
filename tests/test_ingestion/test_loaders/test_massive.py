@@ -25,23 +25,10 @@ def test_massive_download(mock_restclient):
     loader = MassiveForex(None)
     df = loader.download("ABCDEF", pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03"))
 
-    assert isinstance(df, pd.DataFrame)
-
-    assert df.index.name == "timestamp"
-    assert df.index.to_list() == [
-        pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-02"), pd.Timestamp("2024-01-03")
-        ]
-
-    assert list(df.columns) == ["open", "high", "low", "close", "volume", "vwap"]
-    assert len(df) == 3
-    assert df.iloc[0].to_list() == 
-    assert df.iloc[1].to_list() == 
-    assert df.iloc[2].to_list() == 
-
     expected = pd.DataFrame([
-            [1, 1, 1, 1, 10, 1],
-            [2, 2, 2, 2, 20, 2],
-            [3, 3, 3, 3, 30, 3]
+            [1, 1, 1, 1, 10],
+            [2, 2, 2, 2, 20],
+            [3, 3, 3, 3, 30]
         ],
         columns = ["open", "high", "low", "close", "volume"],
         index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="timestamp")

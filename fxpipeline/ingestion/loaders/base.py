@@ -23,18 +23,18 @@ class ForexPriceLoader(ABC):
         self.api_key = api_key
 
     @abstractmethod
-    def download(self, ticker: CurrencyPair, start: pd.Timestamp,
+    def download(self, pair: CurrencyPair, start: pd.Timestamp,
                  end: pd.Timestamp, interval: str = "1d") -> ForexPrice:
         """Download forex data from internet, can raise errors"""
 
-    def batch_download(self, tickers: list[CurrencyPair], start: pd.Timestamp,
+    def batch_download(self, pairs: list[CurrencyPair], start: pd.Timestamp,
                        end: pd.Timestamp, interval: str = "1d") -> list[ForexPrice]:
         """
         Call download() in a loop.
         But, Concrete class like YFinanceForex may optimize.
         """
         res = []
-        for ticker in tickers:
-            data = self.download(ticker, start, end, interval)
+        for pair in pairs:
+            data = self.download(pair, start, end, interval)
             res.append(data)
         return res

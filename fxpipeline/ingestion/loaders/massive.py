@@ -18,21 +18,18 @@ class MassiveForex(ForexPriceLoader):
     @staticmethod
     def _clean(df: pd.DataFrame) -> pd.DataFrame:
         df.index = pd.to_datetime(df["timestamp"], unit="ms")
-        for name in ("timestamp", "transactions", "otc"):
+        for name in ("vwap", "timestamp", "transactions", "otc"):
             df.drop(name, axis=1, inplace=True)
         return df
 
-    def download(self, ticker: CurrencyPair, start: pd.Timestamp,
+    def download(self, pair: CurrencyPair, start: pd.Timestamp,
                  end: pd.Timestamp, interval: str = "1d") -> ForexPrice:
-        logger.info(f"Downloading '{req} with Massive API")
+        logger.info(f"Downloading '{pair} with Massive API")
 
         aggs = []
         client = RESTClient(self.api_key)
-        for a in client.list_aggs(
-            f"C:{req.pair}", 1, "day", req.start, req.end, adjusted="true", sort="asc"
-        ):
+        for a in client.list_aggs(f"C:{pair}", 1, "day", start, end, adjusted="true", sort="asc"):
             aggs.append(a)
-
         if not aggs:
             raise NotDownloadedError("Massive: data is not downloaded")
 
