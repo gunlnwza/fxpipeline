@@ -35,4 +35,4 @@ class MassiveForex(ForexPriceLoader):
 
         df = pd.DataFrame(aggs)
         df = self._clean(df)
-        return df
+        return ForexPrice(pair.copy(), "massive", df)

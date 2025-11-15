@@ -68,4 +68,4 @@ class AlphaVantageForex(ForexPriceLoader):
 
         df = pd.read_csv(StringIO(res.text), index_col="timestamp", parse_dates=True)
         df = self._clean(df)
-        return df
+        return ForexPrice(pair.copy(), "alpha_vantage", df)
