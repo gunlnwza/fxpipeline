@@ -1,9 +1,10 @@
+import sys
 import logging
 import argparse
 from itertools import combinations
 
-from fxpipeline.core import make_pair
-from fxpipeline.ingestion import fetch_forex_price
+from fxpipeline.core import make_pair, CurrencyPair
+from fxpipeline.ingestion import fetch_forex_price, fetch_forex_prices
 from fxpipeline.utils import handle_sigint
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,18 @@ def config_logging(debug):
             logging.getLogger(p).setLevel(level)
 
 
+def parse_tickers(tickers: list[str]) -> list[CurrencyPair]:
+    if tickers[0] in ("major", "minor"):
+        assert len(tickers) == 1, f"Invalid ticker list {tickers}"
+
+    global_curs = ("EUR", "GBP", "AUD", "NZD", "CAD", "CHF", "JPY")
+    if tickers[0] == "major":
+        return [make_pair(a + "USD") for a in global_curs]
+    elif tickers[0] == "minor":
+        return [make_pair(a + b) for a, b in combinations(global_curs, 2)]
+    return [make_pair(t) for t in tickers]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("tickers", nargs="+")
@@ -40,15 +53,13 @@ def main():
     handle_sigint()
     config_logging(args.debug)
 
-    global_curs = ("EUR", "GBP", "AUD", "NZD", "CAD", "CHF", "JPY")
-    if args.tickers == ["major"]:
-        pairs = [make_pair(a + "USD") for a in global_curs]
-    elif args.tickers == ["minor"]:
-        pairs = [make_pair(a + b) for a, b in combinations(global_curs, 2)]
-    else:
-        pairs = [make_pair(t) for t in args.tickers]
+    try:
+        pairs = parse_tickers(args.tickers)
+    except (AssertionError, ValueError) as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
-    data = fetch_forex_price(pairs[0], args.source, args.start, args.end)
+    data = fetch_forex_prices(pairs, args.source, args.start, args.end)
     print(data)
 
 
