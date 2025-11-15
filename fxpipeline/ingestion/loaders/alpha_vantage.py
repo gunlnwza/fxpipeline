@@ -23,6 +23,7 @@ class AlphaVantageForex(ForexPriceLoader):
     @staticmethod
     def _clean(df: pd.DataFrame) -> pd.DataFrame:
         df = df.sort_index()
+        df["volume"] = 0
         return df
 
     def download(self, pair: CurrencyPair, start: pd.Timestamp,

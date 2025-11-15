@@ -20,11 +20,11 @@ def test_alpha_vantage_download(mock_get):
     df = loader.download(make_pair("ABCDEF"), pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03"))
 
     expected = pd.DataFrame([
-            [1, 1, 1, 1],
-            [2, 2, 2, 2],
-            [3, 3, 3, 3]
+            [1, 1, 1, 1, 0],
+            [2, 2, 2, 2, 0],
+            [3, 3, 3, 3, 0]
         ],
-        columns = ["open", "high", "low", "close"],
+        columns = ["open", "high", "low", "close", "volume"],
         index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="timestamp")
     )
     pd.testing.assert_frame_equal(df, expected)
