@@ -1,6 +1,8 @@
 import logging
 import argparse
+from itertools import combinations
 
+from fxpipeline.core import make_pair
 from fxpipeline.ingestion import fetch_forex_price
 from fxpipeline.utils import handle_sigint
 
@@ -28,8 +30,7 @@ def config_logging(debug):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("ticker")
-    # parser.add_argument("tickers", nargs="+")
+    parser.add_argument("tickers", nargs="+")
     parser.add_argument("-s", "--source", default="yfinance")
     parser.add_argument("--start")
     parser.add_argument("--end")
@@ -39,12 +40,17 @@ def main():
     handle_sigint()
     config_logging(args.debug)
 
-    # tickers = args.tickers
-    # if args.tickers == ["major"]:
-    # tickers = ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY"]
+    global_curs = ("EUR", "GBP", "AUD", "NZD", "CAD", "CHF", "JPY")
+    if args.tickers == ["major"]:
+        pairs = [make_pair(a + "USD") for a in global_curs]
+    elif args.tickers == ["minor"]:
+        pairs = [make_pair(a + b) for a, b in combinations(global_curs, 2)]
+    else:
+        pairs = [make_pair(t) for t in args.tickers]
 
-    data = fetch_forex_price(args.ticker, args.source, args.start, args.end)
+    data = fetch_forex_price(pairs[0], args.source, args.start, args.end)
     print(data)
+
 
 if __name__ == "__main__":
     main()

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from .loaders import get_loader
 from .database import SQLiteDatabase
-from ..core import ForexPrice, make_pair
+from ..core import ForexPrice, make_pair, CurrencyPair
 
 load_dotenv()
 
@@ -15,7 +15,7 @@ CACHES_PATH = os.getenv("CACHES_PATH")
 logger = logging.getLogger(__file__)
 
 
-def fetch_forex_price(ticker: str, source: str,
+def fetch_forex_price(ticker: str | CurrencyPair, source: str,
                       start: str | None = None,
                       end: str | None = None) -> ForexPrice:
     pair = make_pair(ticker)
@@ -36,24 +36,3 @@ def fetch_forex_price(ticker: str, source: str,
     data = loader.download(pair, start, end)
     db.save(data)
     return data
-
-
-# I like retry logic
-
-# def _fetch_with_retries(reqs: list[],
-#                         loader: ForexPriceLoader,
-#                         database: ForexPriceDatabase,
-#                         retries=5, max_retry_wait=30) -> bool:
-#     """Fetch several times, update nothing if no data is downloaded"""
-#     for req in reqs:
-#         logger.debug(f"Fetching {req.pair}...")
-#         for i in range(1, retries + 1):
-#             try:
-#                 logger.debug(f"Fetching {req.pair} (attempt {i})...")
-#                 _fetch(req, loader, database)  # Can raise exceptions.
-#                 break
-#             except MaxRetryError as e:
-#                 logger.error(f"MaxRetryError: {e} ; retrying in {max_retry_wait:.1f}s...")
-#                 if i == retries:
-#                     break
-#                 time.sleep(max_retry_wait)

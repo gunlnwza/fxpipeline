@@ -31,17 +31,20 @@ class MassiveForex(ForexPriceLoader):
         aggs = None
         client = RESTClient(self.api_key)
         retries = 3
-        time_wait = 12
+        time_wait = 10
         for i in range(retries):
             try:
+                logger.debug(f"Downloading (attempt={i + 1})")
                 aggs = list(client.list_aggs(
-                f"C:{pair}", 1, "day", start, end, adjusted="true", sort="asc"
+                    f"C:{pair}", 1, "day", start, end, adjusted="true", sort="asc"
                 ))
+                break
             except MaxRetryError:
                 if i == retries - 1:
                     break
-                logger.debug(f"Massive API max retries exceeded (attempt={i + 1}), "
+                logger.debug(f"Massive API limit exceeded (attempt={i + 1}), "
                              f"retrying in {time_wait}s")
+                time_wait *= 2
                 time.sleep(time_wait)
 
         if aggs is None:
