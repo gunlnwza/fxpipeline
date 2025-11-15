@@ -4,13 +4,12 @@ import warnings
 import pandas as pd
 import yfinance as yf
 
-from .base import ForexPriceLoader, BatchDownloadMixin
-from ..data_request import ForexPriceRequest
+from .base import ForexPriceLoader
 
 logger = logging.getLogger(__name__)
 
 
-class YFinanceForex(ForexPriceLoader, BatchDownloadMixin):
+class YFinanceForex(ForexPriceLoader):
     def __init__(self, api_key=None):
         super().__init__(api_key)
 
@@ -24,7 +23,7 @@ class YFinanceForex(ForexPriceLoader, BatchDownloadMixin):
         df.index.name = "timestamp"
         return df
 
-    def download(self, req: ForexPriceRequest) -> pd.DataFrame:
+    def download(self, req, start, end, interval) -> pd.DataFrame:
         logger.info(f"Downloading '{req}' with yfinance")
 
         ticker = f"{req.ticker}=X"
@@ -43,16 +42,16 @@ class YFinanceForex(ForexPriceLoader, BatchDownloadMixin):
         df.index.name = "timestamp"
         return df
 
-    def batch_download(self, reqs: list[ForexPriceRequest]) -> list[pd.DataFrame]:
-        logger.info(f"Downloading '{[r.ticker for r in reqs]}' with yfinance")
+    # def batch_download(self, reqs: list[str]) -> list[pd.DataFrame]:
+    #     logger.info(f"Downloading '{[r.ticker for r in reqs]}' with yfinance")
 
-        tickers = [f"{r.ticker}=X" for r in reqs]
-        start = min(r.start for r in reqs)
-        end = max(r.end for r in reqs)
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("ignore")
-            df = yf.download(tickers, start, end, group_by="ticker", progress=False)
+    #     tickers = [f"{r.ticker}=X" for r in reqs]
+    #     start = min(r.start for r in reqs)
+    #     end = max(r.end for r in reqs)
+    #     with warnings.catch_warnings(record=True):
+    #         warnings.simplefilter("ignore")
+    #         df = yf.download(tickers, start, end, group_by="ticker", progress=False)
 
-        df = self._batch_clean(df)
-        lst = [df[ticker] for ticker in tickers]
-        return lst
+    #     df = self._batch_clean(df)
+    #     lst = [df[ticker] for ticker in tickers]
+    #     return lst

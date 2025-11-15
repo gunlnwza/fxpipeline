@@ -1,7 +1,8 @@
+import pandas as pd
 import numpy as np
 import pytest
 
-from fxpipeline.preprocessing.trades import should_enter
+from fxpipeline.preprocessing.labeling import should_enter, label_entry_signal
 
 
 def _make_lines(points: list[tuple[int, int]], n_points: int | None = None) -> np.ndarray:
@@ -47,6 +48,13 @@ def test_middle_big_down():
     assert should_enter(pips, sell=True) is True
 
 
+def test_draw():
+    pips = _make_lines([(0, 0), (10, 50), (20, -50), (30, 50), (40, -50),
+                        (50, 50), (60, -50), (70, 50), (80, -50), (90, 50), (100, 0)])
+    assert should_enter(pips) is False
+    assert should_enter(pips, sell=True) is False
+
+
 def test_two_big_ups():
     pips = _make_lines([(0, 0), (25, 1000), (50, 0), (75, 1000), (100, 0)])
     assert should_enter(pips) is True
@@ -57,13 +65,6 @@ def test_two_big_downs():
     pips = _make_lines([(0, 0), (25, -1000), (50, 0), (75, -1000), (100, 0)])
     assert should_enter(pips) is False
     assert should_enter(pips, sell=True) is True
-
-
-def test_draw():
-    pips = _make_lines([(0, 0), (10, 50), (20, -50), (30, 50), (40, -50),
-                        (50, 50), (60, -50), (70, 50), (80, -50), (90, 50), (100, 0)])
-    assert should_enter(pips) is False
-    assert should_enter(pips, sell=True) is False
 
 
 def test_small_down_big_up():
@@ -94,3 +95,10 @@ def test_plateau_up():
     pips = _make_lines([(0, 0), (80, 900), (90, 1000), (100, 0)])
     assert should_enter(pips) is True
     assert should_enter(pips, sell=True) is False
+
+
+# --- label_entry_signal
+def test_label_entry_signal():
+    price_df = pd.DataFrame()
+    price_df = label_entry_signal(price_df)
+    # assert

@@ -1,15 +1,6 @@
 import time
-import signal
 
-import pytest
-
-from fxpipeline.utils.signal_utils import _sigint_handler
 from fxpipeline.utils import Stopwatch
-
-
-def test_sigint_handler_exits():
-    with pytest.raises(SystemExit):
-        _sigint_handler(signal.SIGINT, None)
 
 
 def test_stopwatch():

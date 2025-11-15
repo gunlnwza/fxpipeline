@@ -14,7 +14,7 @@ def test_major_currencies():
         base, quote = ticker[:3], ticker[3:]
         cur_pair = make_pair(base, quote)
         assert ticker == cur_pair.ticker
-        
+
         cur_pair = make_pair(quote, base)
         assert ticker == cur_pair.ticker
 

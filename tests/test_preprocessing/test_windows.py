@@ -1,10 +1,10 @@
-from statistics import mean, pstdev
-
 import pandas as pd
 import pytest
 
 from fxpipeline.preprocessing import get_windows, get_normalized_windows
 
+
+# --- get_windows
 
 def test_get_windows():
     series = pd.Series([0, 1, 2, 3, 4, 5]).rename("name")
@@ -27,7 +27,9 @@ def test_get_windows_too_short():
         get_windows(pd.Series([0, 1, 2]).rename("short"), 3, 1)
 
 
-def test_get_normalized_windows_index():
+# --- get_normalized_windows
+
+def test_get_normalized_windows():
     series = pd.Series([0, 1, 2, 3, 4, 5]).rename("name")
     nw = get_normalized_windows(series, seen_rows=3, future_rows=1)
 

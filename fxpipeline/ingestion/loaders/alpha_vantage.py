@@ -5,7 +5,7 @@ import requests
 import numpy as np
 import pandas as pd
 
-from .base import ForexPriceLoader, APIError, NotDownloadedError, ForexPriceRequest
+from .base import ForexPriceLoader, APIError, NotDownloadedError
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +15,8 @@ class AlphaVantageForex(ForexPriceLoader):
         super().__init__(api_key)
 
     @staticmethod
-    def _should_download_full(req: ForexPriceRequest):
-        business_day = np.busday_count(req.start.date(), req.end.date() + pd.Timedelta(days=1))
+    def _should_download_full(start, end):
+        business_day = np.busday_count(start.date(), end.date() + pd.Timedelta(days=1))
         return business_day >= 100
 
     @staticmethod
@@ -24,21 +24,21 @@ class AlphaVantageForex(ForexPriceLoader):
         df = df.sort_index()
         return df
 
-    def download(self, req: ForexPriceRequest) -> pd.DataFrame:
+    def download(self, req, start, end, interval) -> pd.DataFrame:
         """
-        download price from Alpha Vantage
-        return df on success, None on error
+        Download price from Alpha Vantage
 
-        Parameters
-        [REQUIRED] `apikey`:
-        [REQUIRED] `from_symbol`:
-        [REQUIRED] `to_symbol`:
-        [REQUIRED] `function`: FX_INTRADAY, FX_DAILY, FX_WEEKLY, FX_MONTHLY
+        ### Parameters
 
-        [REQUIRED if FX_INTRADAY] `interval`: 1min, 5min, 15min, 30min, 60min
-
-        [OPTIONAL] `datatype`: default=json, csv
-        [OPTIONAL if FX_INTRADAY, FX_DAILY] `outputsize`: default=compact, full
+        - Required
+            - `apikey`
+            - `from_symbol`
+            - `to_symbol`
+            - `function`: FX_INTRADAY, FX_DAILY, FX_WEEKLY, FX_MONTHLY
+            - `interval` (If FX_INTRADAY): 1min, 5min, 15min, 30min, 60min
+        - Optional
+            - `datatype`: default=json, csv
+            - `outputsize` (If FX_INTRADAY, FX_DAILY): default=compact, full
 
         NOTE: 4H is not supported by the API
         """

@@ -1,4 +1,3 @@
-import os
 import logging
 import sqlite3
 from abc import ABC, abstractmethod
@@ -35,7 +34,7 @@ class ForexPriceDatabase(ABC):
 class SQLiteDatabase(ForexPriceDatabase):
     def __init__(self, database: str):
         self.conn = sqlite3.connect(database)
-    
+
     def open(self, database: str):
         self.conn = sqlite3.connect(database)
 

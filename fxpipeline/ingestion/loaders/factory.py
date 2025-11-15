@@ -10,7 +10,7 @@ load_dotenv()
 
 LOADERS = {
     "alpha_vantage": AlphaVantageForex(os.getenv("ALPHA_VANTAGE_API_KEY")),
-    "massive": MassiveForex(os.getenv("POLYGON_API_KEY")),
+    "massive": MassiveForex(os.getenv("MASSIVE_API_KEY")),
     "yfinance": YFinanceForex()
 }
 

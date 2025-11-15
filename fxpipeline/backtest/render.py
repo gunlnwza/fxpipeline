@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import warnings
 from typing import TYPE_CHECKING
 
-warnings.filterwarnings("ignore")
 import pygame as pg
-warnings.filterwarnings("default")
 
 if TYPE_CHECKING:
     from .data import Data

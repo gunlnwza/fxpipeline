@@ -54,7 +54,7 @@ def _get_pip(base: str, quote: str) -> float:
     return 0.0001
 
 
-def make_pair(ticker: str, source: str) -> CurrencyPair:
+def make_pair(ticker: str, source: str = None) -> CurrencyPair:
     if len(ticker) != 6:
         raise ValueError(f"Invalid ticker string '{ticker}'")
     base, quote = ticker[:3], ticker[3:]
