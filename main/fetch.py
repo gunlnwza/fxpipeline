@@ -4,7 +4,7 @@ import argparse
 from itertools import combinations
 
 from fxpipeline.core import make_pair, CurrencyPair
-from fxpipeline.ingestion.fetch import fetch_forex_prices
+from fxpipeline.ingestion.get import fetch_forex_prices
 from fxpipeline.utils import handle_sigint
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def main():
     parser.add_argument("-s", "--source", default="yfinance")
     parser.add_argument("--start")
     parser.add_argument("--end")
-    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("-d", "--debug", action="store_true")
     args = parser.parse_args()
 
     handle_sigint()
