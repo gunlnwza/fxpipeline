@@ -16,17 +16,17 @@ class ForexPriceDatabase(ABC):
         pass
 
     @abstractmethod
-    def load(self, pair: CurrencyPair) -> ForexPrice:
+    def load(self, pair: CurrencyPair, source: str) -> ForexPrice:
         """Load all historical data of 'pair'"""
         pass
 
     @abstractmethod
-    def last_price(self, pair: CurrencyPair) -> float:
+    def last_price(self, pair: CurrencyPair, source: str) -> float:
         """Get only last price of 'pair'"""
         pass
 
     @abstractmethod
-    def last_timestamp(self, pair: CurrencyPair) -> pd.Timestamp:
+    def last_timestamp(self, pair: CurrencyPair, source: str) -> pd.Timestamp:
         """Get only last timestamp of 'pair"""
         pass
 
@@ -72,34 +72,32 @@ class SQLiteDatabase(ForexPriceDatabase):
             FROM Prices
             WHERE source = ? AND ticker = ?;
             """,
-            conn, params=(source, pair.ticker), index_col="timestamp", parse_dates=True
+            self.conn, params=(source, pair.ticker), index_col="timestamp", parse_dates=True
         )
-        df.drop(["source, ticker"], axis=1, inplace=True)
+        df.index = pd.to_datetime(df.index)
+        df.drop(["source", "ticker"], axis=1, inplace=True)
         return ForexPrice(pair.copy(), source, df)
 
-    def last_price(self, pair: CurrencyPair) -> float:
-        table = f"{pair.source}_prices"
-        with self.conn as conn:
-            last_price = pd.read_sql(f'''
-                SELECT close FROM {table}
-                WHERE ticker = "{pair.ticker}"
-                ORDER BY timestamp DESC
-                LIMIT 1;
-                ''',
-                conn
-            )["close"].iloc[0]
-        return last_price
+    def last_price(self, pair: CurrencyPair, source: str) -> float:
+        cursor = self.conn.execute("""
+            SELECT close
+            FROM Prices
+            WHERE source = ? AND ticker = ?
+            ORDER BY timestamp DESC
+            LIMIT 1;
+            """,
+            (source, pair.ticker)
+        )
+        return cursor.fetchone()
 
-    def last_timestamp(self, pair: CurrencyPair) -> pd.Timestamp:
-        table = f"{pair.source}_prices"
-        with self.conn as conn:
-            last_timestamp = pd.read_sql(f'''
+    def last_timestamp(self, pair: CurrencyPair, source: str) -> pd.Timestamp:
+        cursor = self.conn.execute("""
                 SELECT timestamp
-                FROM {table}
-                WHERE ticker = "{pair.ticker}"
+                FROM Prices
+                WHERE source = ? AND ticker = ?
                 ORDER BY timestamp DESC
                 LIMIT 1;
-                ''',
-                conn
-            )["timestamp"].iloc[0]
-        return pd.Timestamp(last_timestamp)
+            """,
+            (source, pair.ticker)
+        )
+        return cursor.fetchone()

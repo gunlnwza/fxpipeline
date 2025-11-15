@@ -7,7 +7,7 @@ from fxpipeline.ingestion.database import SQLiteDatabase
 """
 Database Jobs
 - Insert price
-- Store price (Alpha Vantage, Massive, yfinance)
+- Store price (Alpha Vantage, Massive, yfinance) (All loaders yield same schema)
 - Load price
 - Fetch last price
 - Fetch last timestamp
@@ -15,19 +15,23 @@ Database Jobs
 
 
 @pytest.fixture
-def alpha_vantage_data() -> ForexPrice:
+def pair():
+    return make_pair("ABCDEF")
+
+
+@pytest.fixture
+def data(pair):
     df = pd.DataFrame([
-            [1.16, 1.1637, 1.1546, 1.1565],
-            [1.1565, 1.1577, 1.152, 1.1534],
-            [1.1534, 1.1541, 1.1504, 1.1518],
-            [1.1519, 1.1533, 1.1472, 1.1482],
-            [1.1483, 1.1497, 1.1468, 1.1491]
+            [1, 2, 3, 4, 5],
+            [6, 7, 8, 9, 10],
+            [11, 12, 13, 14, 15],
+            [16, 17, 18, 19, 20],
+            [21, 22, 23, 24, 25]
         ],
-        columns=["open", "high", "low", "close"],
-        index=["2025-10-30", "2025-10-31", "2025-11-03", "2025-11-04", "2025-11-05"]
+        columns=["open", "high", "low", "close", "volume"],
+        index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in range(1, 6)], name="timestamp")
     )
-    df.index.name = "timestamp"
-    return ForexPrice(make_pair("EURUSD", "alpha_vantage"), df)
+    return ForexPrice(pair, "source", df)
 
 
 @pytest.fixture
@@ -36,37 +40,27 @@ def db():
     yield db
     db.close()
 
-# @pytest.fixture
-# def massive_data():
-#     return pd.DataFrame()
 
-
-# @pytest.fixture
-# def yfinance_data():
-#     return pd.DataFrame()
-
-
-def test_source_alpha_vantage(db, alpha_vantage_data):
-    data = alpha_vantage_data
-    pair = data.pair
-
+@pytest.fixture
+def populated_db(data):
+    db = SQLiteDatabase(":memory:")
     db.save(data)
+    yield db
+    db.close()
 
-    loaded_data = db.load(pair)
-    assert loaded_data.pair == pair
-    pd.testing.assert_frame_equal(loaded_data.df, data.df, rtol=1e-6, atol=1e-6)
 
-    assert db.last_price(pair) == pytest.approx(1.1491, rel=1e-6)
-    assert db.last_timestamp(pair) == pd.to_datetime("2025-11-05")
-
+def test_save_and_load(db, data, pair):
+    db.save(data)
     assert "ticker" not in data.df.columns
 
+    loaded_data = db.load(pair, "source")
 
-# def test_source_massive():
-#     pass
+    pd.testing.assert_frame_equal(loaded_data.df, data.df, rtol=1e-6, atol=1e-6)
 
-# def test_source_yfinance():
-#     pass
+    assert loaded_data.pair == data.pair
+    assert loaded_data.pair is not data.pair
 
 
-# conn.close()
+def test_last_value(populated_db, pair):
+    assert populated_db.last_price(pair) == 24
+    assert populated_db.last_timestamp(pair) == pd.Timestamp("2024-01-05")
