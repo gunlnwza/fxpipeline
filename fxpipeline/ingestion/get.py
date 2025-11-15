@@ -1,5 +1,6 @@
 import os
 import logging
+from ..utils import Stopwatch
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -35,18 +36,25 @@ def fetch_forex_prices(pairs: str | CurrencyPair | list[str | CurrencyPair], sou
                        end: str | pd.Timestamp | None = None) -> list[ForexPrice]:
     pairs = _convert_pairs(pairs)
     start, end = _convert_start_end(start, end)
-
     loader = get_loader(source)
     res = []
+
+    print(f"📦 Fetching with {source.upper()} API")
+    sw_0 = Stopwatch()
     for pair in pairs:
+        print(f"📈 {pair} [{source}]... ", end="", flush=True)
         if db.have(pair, source, start, end):
             logger.debug(f"Have {source}'s {pair} in cache")
             data = db.load(pair, source)
+            print("✅ Cached")
         else:
+            sw_1 = Stopwatch()
             data = loader.download(pair, start, end)
             db.save(data)
+            print(f"⏱️  {sw_1.time:.2f}s")
         res.append(data)
 
+    print(f"✔️  All done in {sw_0.time:.2f}s")
     return res
 
 
