@@ -34,9 +34,6 @@ def _convert_start_end(start, end, days):
 def fetch_forex_prices(pairs: str | CurrencyPair | list[str | CurrencyPair], source: str,
                        start: str | pd.Timestamp | None = None,
                        end: str | pd.Timestamp | None = None) -> list[ForexPrice]:
-    print(f"📦 Fetching with {source.upper()} API")
-    sw_0 = Stopwatch()
-
     pairs = _convert_pairs(pairs)
     start, end = _convert_start_end(start, end, 30)
 
@@ -44,6 +41,8 @@ def fetch_forex_prices(pairs: str | CurrencyPair | list[str | CurrencyPair], sou
     loader = get_loader(source)
     res = []
 
+    print(f"📦 Fetching with {source.upper()} API")
+    sw_0 = Stopwatch()
     for pair in pairs:
         print(f"📈 {pair} [{source}]... ", end="", flush=True)
         if db.have(pair, source, start, end):
