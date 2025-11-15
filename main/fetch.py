@@ -7,7 +7,7 @@ from fxpipeline.utils import handle_sigint
 logger = logging.getLogger(__name__)
 
 
-def config_logging(debug=True):
+def config_logging(debug):
     logging.basicConfig(
         level=logging.DEBUG if debug else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -27,22 +27,23 @@ def config_logging(debug=True):
 
 
 def main():
-    handle_sigint()
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("tickers", nargs="+")
-    parser.add_argument("-d", "--days", type=int, default=100)
+    parser.add_argument("ticker")
+    # parser.add_argument("tickers", nargs="+")
     parser.add_argument("-s", "--source", default="yfinance")
+    parser.add_argument("--start")
+    parser.add_argument("--end")
     parser.add_argument("--debug", action="store_true")
     args = parser.parse_args()
 
+    handle_sigint()
     config_logging(args.debug)
 
-    if args.tickers == ["major"]:
-        tickers = ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY"]
-    else:
-        tickers = args.tickers
-    fetch_forex_price(tickers, args.source, days=args.days)
+    # tickers = args.tickers
+    # if args.tickers == ["major"]:
+        # tickers = ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY"]
+
+    fetch_forex_price(args.ticker, args.source, args.start, args.end)
 
 
 if __name__ == "__main__":

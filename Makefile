@@ -3,9 +3,9 @@ SRCS := fxpipeline main tests
 lint:
 	flake8 $(SRCS) --max-line-length 100 --extend-exclude .trash,venv,__init__.py
 
-TESTS ?=
+PAT ?= .
 test:
-	PYTHONPATH=. pytest $(TESTS)
+	PYTHONPATH=. pytest -k $(PAT)
 
 cov:
 	PYTHONPATH=. pytest --cov=fxpipeline --cov-report=term --cov-report=html

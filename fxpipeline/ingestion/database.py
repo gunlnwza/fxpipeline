@@ -37,14 +37,9 @@ class SQLiteDatabase(ForexPriceDatabase):
     def __init__(self, database: str):
         self.conn = sqlite3.connect(database)
 
-    def open(self, database: str):
-        self.conn = sqlite3.connect(database)
+        self._create_prices_table_if_not_exist()
 
-    def close(self):
-        self.conn.close()
-        self.conn = None
-
-    def save(self, data: ForexPrice):
+    def _create_prices_table_if_not_exist(self):
         with self.conn:
             self.conn.execute("""
                 CREATE TABLE IF NOT EXISTS Prices (
@@ -60,11 +55,20 @@ class SQLiteDatabase(ForexPriceDatabase):
                 );
                 """)
 
-            df = data.df.copy()
-            df.reset_index(inplace=True)
-            df["source"] = data.source
-            df["ticker"] = data.pair.ticker
-            df = df[["source", "ticker", "timestamp", "open", "high", "low", "close", "volume"]]
+    def open(self, database: str):
+        self.conn = sqlite3.connect(database)
+
+    def close(self):
+        self.conn.close()
+        self.conn = None
+
+    def save(self, data: ForexPrice):
+        df = data.df.copy()
+        df.reset_index(inplace=True)
+        df["source"] = data.source
+        df["ticker"] = data.pair.ticker
+        df = df[["source", "ticker", "timestamp", "open", "high", "low", "close", "volume"]]
+        with self.conn:
             df.to_sql("Prices", self.conn, if_exists="append", index=False)
 
     def load(self, pair: CurrencyPair, source: str,

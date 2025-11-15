@@ -19,7 +19,6 @@ class YFinanceForex(ForexPriceLoader):
     def _clean(df: pd.DataFrame) -> pd.DataFrame:
         df.columns = df.columns.droplevel("Ticker")
         df.columns.name = None
-        df.drop('Adj Close', axis=1, inplace=True)
         df.rename(columns={
             "Open": "open", "High": "high", "Low": "low",
             "Close": "close", "Volume": "volume"}, inplace=True)
@@ -28,7 +27,7 @@ class YFinanceForex(ForexPriceLoader):
 
     def download(self, pair: CurrencyPair, start: pd.Timestamp,
                  end: pd.Timestamp, interval: str = "1d") -> ForexPrice:
-        logger.info(f"Downloading '{pair}' with yfinance")
+        logger.debug(f"Downloading '{pair}' with yfinance")
 
         ticker = f"{pair}=X"
         with warnings.catch_warnings(record=True):
@@ -39,8 +38,7 @@ class YFinanceForex(ForexPriceLoader):
         return ForexPrice(pair.copy(), self.name, df)
 
     @staticmethod
-    def _batch_clean(df: pd.DataFrame, tickers: list[str]) -> pd.DataFrame:
-        df.drop([(ticker, 'Adj Close') for ticker in tickers], axis=1, inplace=True)
+    def _batch_clean(df: pd.DataFrame) -> pd.DataFrame:
         df.columns.names = (None, None)
         df.rename(columns={
             "Open": "open", "High": "high", "Low": "low",
@@ -50,13 +48,13 @@ class YFinanceForex(ForexPriceLoader):
 
     def batch_download(self, pairs: list[CurrencyPair], start: pd.Timestamp,
                        end: pd.Timestamp, interval: str = "D1") -> list[ForexPrice]:
-        logger.info(f"Downloading '{[pair.ticker for pair in pairs]}' with yfinance")
+        logger.debug(f"Downloading '{[pair.ticker for pair in pairs]}' with yfinance")
 
         tickers = [f"{pair}=X" for pair in pairs]
         with warnings.catch_warnings(record=True):
             warnings.simplefilter("ignore")
             df = yf.download(tickers, start, end, group_by="ticker", progress=False)
 
-        df = self._batch_clean(df, tickers)
+        df = self._batch_clean(df)
         return [ForexPrice(pair.copy(), self.name, df[ticker])
                 for pair, ticker in zip(pairs, tickers)]

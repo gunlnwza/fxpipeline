@@ -24,7 +24,7 @@ class MassiveForex(ForexPriceLoader):
 
     def download(self, pair: CurrencyPair, start: pd.Timestamp,
                  end: pd.Timestamp, interval: str = "1d") -> ForexPrice:
-        logger.info(f"Downloading '{pair} with Massive API")
+        logger.debug(f"Downloading '{pair} with Massive API")
 
         aggs = []
         client = RESTClient(self.api_key)

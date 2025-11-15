@@ -9,11 +9,11 @@ from fxpipeline.ingestion.loaders import YFinanceForex
 @patch("fxpipeline.ingestion.loaders.yfinance_wrapper.yf.download")
 def test_yfinance_download(mock_download):
     # using group_by="ticker"
-    cols = ["Open", "High", "Low", "Close", "Adj Close", "Volume"]
+    cols = ["Open", "High", "Low", "Close", "Volume"]
     df = pd.DataFrame([
-            [1, 2, 3, 4, 5, 10],
-            [6, 7, 8, 9, 10, 20],
-            [11, 12, 13, 14, 15, 30]
+            [1, 2, 3, 4, 10],
+            [6, 7, 8, 9, 20],
+            [11, 12, 13, 14, 30]
         ],
         columns=pd.MultiIndex.from_tuples(
             [("ABCDEF=X", col) for col in cols],
@@ -48,11 +48,11 @@ def test_yfinance_download(mock_download):
 def test_yfinance_batch_download(mock_download):
     # using group_by="ticker"
     tickers = ["ABCDEF=X", "ABCXYZ=X"]
-    cols = ["Open", "High", "Low", "Close", "Adj Close", "Volume"]
+    cols = ["Open", "High", "Low", "Close", "Volume"]
     df = pd.DataFrame([
-            [1, 2, 3, 4, 5, 100, 51, 52, 53, 54, 55, 100],
-            [6, 7, 8, 9, 10, 200, 56, 57, 58, 59, 60, 200],
-            [11, 12, 13, 14, 15, 300, 61, 62, 63, 64, 65, 300]
+            [1, 2, 3, 4, 100, 51, 52, 53, 54, 100],
+            [6, 7, 8, 9, 200, 56, 57, 58, 59, 200],
+            [11, 12, 13, 14, 300, 61, 62, 63, 64, 300]
         ],
         columns=pd.MultiIndex.from_tuples(
             [(ticker, col) for ticker in tickers for col in cols],
