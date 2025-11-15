@@ -1,2 +1,2 @@
 from .currency import CurrencyPair, make_pair
-from .data import ForexPrice
+from .forex_price import ForexPrice

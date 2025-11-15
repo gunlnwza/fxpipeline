@@ -4,7 +4,7 @@ import pandas as pd
 from gymnasium import spaces
 
 from fxpipeline.backtest import TradingEnv
-from fxpipeline.backtest.data import Order
+from fxpipeline.backtest.backtest_data import Order
 
 """
 NOTE: does not test rendering-related features

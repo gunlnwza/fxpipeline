@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from fxpipeline.backtest.data import Data, Order
+from fxpipeline.backtest.backtest_data import Order, BacktestData
 
 
 # --- Order
@@ -58,14 +58,14 @@ def test_get_info(buy):
 # --- Data
 
 @pytest.fixture
-def data() -> Data:
+def data() -> BacktestData:
     df_ohlc = pd.DataFrame({
         "open":  [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
         "high":  [30, 31, 32, 33, 34, 35, 36, 37, 38, 39],
         "low":   [0,   1,  2,  3,  4,  5,  6,  7,  8,  9],
         "close": [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
     })
-    return Data(df_ohlc, obs_size=5)
+    return BacktestData(df_ohlc, obs_size=5)
 
 
 def test_get_observation(data):

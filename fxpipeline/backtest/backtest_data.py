@@ -52,7 +52,7 @@ class Order:
         return price_diff
 
 
-class Data:
+class BacktestData:
     def __init__(self, df: pd.DataFrame, obs_size: int):
         assert "close" in df
 

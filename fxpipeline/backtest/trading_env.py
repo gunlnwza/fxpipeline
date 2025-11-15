@@ -7,7 +7,7 @@ import numpy as np
 from gymnasium import spaces
 import gymnasium as gym
 
-from .data import Data
+from .backtest_data import BacktestData
 from .render import PygameRenderer, TerminalRenderer
 
 if TYPE_CHECKING:
@@ -24,7 +24,7 @@ class TradingEnv(gym.Env):
         self.action_space = self._build_action_space()
         self.observation_space = self._build_observation_space(df, obs_size)
 
-        self.data = Data(df, obs_size)
+        self.data = BacktestData(df, obs_size)
         self.renderer = self._build_renderer(render_mode)
 
     def _build_action_space(self):

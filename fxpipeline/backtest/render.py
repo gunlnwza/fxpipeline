@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING
 import pygame as pg
 
 if TYPE_CHECKING:
-    from .data import Data
+    from .backtest_data import BacktestData
 
 
 class Renderer:
     def __init__(self):
         pass
 
-    def render(self, data: Data):
+    def render(self, data: BacktestData):
         truncated = False
         return truncated
 
