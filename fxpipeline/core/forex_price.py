@@ -8,4 +8,5 @@ from .currency import CurrencyPair
 @dataclass
 class ForexPrice:
     pair: CurrencyPair
+    source: str
     df: pd.DataFrame

@@ -4,6 +4,7 @@ import pandas as pd
 from polygon import RESTClient
 
 from .base import ForexPriceLoader, NotDownloadedError
+from ...core import CurrencyPair, ForexPrice
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,8 @@ class MassiveForex(ForexPriceLoader):
             df.drop(name, axis=1, inplace=True)
         return df
 
-    def download(self, req, start, end, interval) -> pd.DataFrame:
+    def download(self, ticker: CurrencyPair, start: pd.Timestamp,
+                 end: pd.Timestamp, interval: str = "D1") -> ForexPrice:
         logger.info(f"Downloading '{req} with Massive API")
 
         aggs = []

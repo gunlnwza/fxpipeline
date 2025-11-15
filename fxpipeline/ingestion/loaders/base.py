@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 
-from ...core import ForexPrice
+from ...core import CurrencyPair, ForexPrice
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +23,11 @@ class ForexPriceLoader(ABC):
         self.api_key = api_key
 
     @abstractmethod
-    def download(self, ticker: str, start: pd.Timestamp,
+    def download(self, ticker: CurrencyPair, start: pd.Timestamp,
                  end: pd.Timestamp, interval: str = "D1") -> ForexPrice:
         """Download forex data from internet, can raise errors"""
 
-    def batch_download(self, tickers: list[str], start: pd.Timestamp,
+    def batch_download(self, tickers: list[CurrencyPair], start: pd.Timestamp,
                        end: pd.Timestamp, interval: str = "D1") -> list[ForexPrice]:
         """
         Call download() in a loop.

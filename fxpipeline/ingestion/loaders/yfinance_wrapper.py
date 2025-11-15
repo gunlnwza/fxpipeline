@@ -5,6 +5,8 @@ import pandas as pd
 import yfinance as yf
 
 from .base import ForexPriceLoader
+from ...core import CurrencyPair, ForexPrice
+
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,8 @@ class YFinanceForex(ForexPriceLoader):
         df.index.name = "timestamp"
         return df
 
-    def download(self, req, start, end, interval) -> pd.DataFrame:
+    def download(self, ticker: CurrencyPair, start: pd.Timestamp,
+                 end: pd.Timestamp, interval: str = "D1") -> ForexPrice:
         logger.info(f"Downloading '{req}' with yfinance")
 
         ticker = f"{req.ticker}=X"
@@ -41,6 +44,10 @@ class YFinanceForex(ForexPriceLoader):
             "Close": "close", "Volume": "volume"}, inplace=True)
         df.index.name = "timestamp"
         return df
+    
+    def batch_download(self, tickers: list[str], start: pd.Timestamp,
+                       end: pd.Timestamp, interval: str = "D1") -> list[ForexPrice]:
+        pass
 
     # def batch_download(self, reqs: list[str]) -> list[pd.DataFrame]:
     #     logger.info(f"Downloading '{[r.ticker for r in reqs]}' with yfinance")

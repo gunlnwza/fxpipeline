@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from .base import ForexPriceLoader, APIError, NotDownloadedError
+from ...core import CurrencyPair, ForexPrice
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class AlphaVantageForex(ForexPriceLoader):
         super().__init__(api_key)
 
     @staticmethod
-    def _should_download_full(start, end):
+    def _should_download_full(start: pd.Timestamp, end: pd.Timestamp) -> bool:
         business_day = np.busday_count(start.date(), end.date() + pd.Timedelta(days=1))
         return business_day >= 100
 
@@ -24,7 +25,8 @@ class AlphaVantageForex(ForexPriceLoader):
         df = df.sort_index()
         return df
 
-    def download(self, req, start, end, interval) -> pd.DataFrame:
+    def download(self, pair: CurrencyPair, start: pd.Timestamp,
+                 end: pd.Timestamp, interval: str = "D1") -> ForexPrice:
         """
         Download price from Alpha Vantage
 
@@ -42,20 +44,20 @@ class AlphaVantageForex(ForexPriceLoader):
 
         NOTE: 4H is not supported by the API
         """
-        logger.info(f"Downloading '{req}' with Alpha Vantage API")
+        logger.info(f"Downloading '{pair}' with Alpha Vantage API")
 
         params = {
             "apikey": self.api_key,
-            "from_symbol": req.pair.base,
-            "to_symbol": req.pair.quote,
+            "from_symbol": pair.base,
+            "to_symbol": pair.quote,
             "function": "FX_DAILY",
             "datatype": "csv",
-            "outputsize": "full" if self._should_download_full(req) else "compact"
+            "outputsize": "full" if self._should_download_full(start, end) else "compact"
         }
         res = requests.get("https://www.alphavantage.co/query", params, timeout=10)
         if not res.ok:
             raise NotDownloadedError(
-                f"Alpha Vantage: HTTP {res.status_code} — cannot download {req}"
+                f"Alpha Vantage: HTTP {res.status_code} — cannot download {pair}"
                 )
 
         content_type = res.headers.get("Content-Type", "")
