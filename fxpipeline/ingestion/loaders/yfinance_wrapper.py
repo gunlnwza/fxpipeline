@@ -18,8 +18,11 @@ class YFinanceForex(ForexPriceLoader):
     @staticmethod
     def _clean(df: pd.DataFrame) -> pd.DataFrame:
         df.columns = df.columns.droplevel("Ticker")
-        df = df[["Open", "High", "Low", "Close", "Volume"]]
-        df.columns = ["open", "high", "low", "close", "volume"]
+        df.columns.name = None
+        df.drop('Adj Close', axis=1, inplace=True)
+        df.rename(columns={
+            "Open": "open", "High": "high", "Low": "low",
+            "Close": "close", "Volume": "volume"}, inplace=True)
         df.index.name = "timestamp"
         return df
 
@@ -35,28 +38,25 @@ class YFinanceForex(ForexPriceLoader):
         df = self._clean(df)
         return ForexPrice(pair.copy(), self.name, df)
 
-    # @staticmethod
-    # def _batch_clean(df: pd.DataFrame) -> pd.DataFrame:
-    #     df.rename(columns={
-    #         "Open": "open", "High": "high", "Low": "low",
-    #         "Close": "close", "Volume": "volume"}, inplace=True)
-    #     df.index.name = "timestamp"
-    #     return df
+    @staticmethod
+    def _batch_clean(df: pd.DataFrame, tickers: list[str]) -> pd.DataFrame:
+        df.drop([(ticker, 'Adj Close') for ticker in tickers], axis=1, inplace=True)
+        df.columns.names = (None, None)
+        df.rename(columns={
+            "Open": "open", "High": "high", "Low": "low",
+            "Close": "close", "Volume": "volume"}, inplace=True)
+        df.index.name = "timestamp"
+        return df
     
-    def batch_download(self, pairs: list[str], start: pd.Timestamp,
+    def batch_download(self, pairs: list[CurrencyPair], start: pd.Timestamp,
                        end: pd.Timestamp, interval: str = "D1") -> list[ForexPrice]:
-        pass
+        logger.info(f"Downloading '{[pair.ticker for pair in pairs]}' with yfinance")
 
-    # def batch_download(self, reqs: list[str]) -> list[pd.DataFrame]:
-    #     logger.info(f"Downloading '{[r.ticker for r in reqs]}' with yfinance")
+        tickers = [f"{pair}=X" for pair in pairs]
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("ignore")
+            df = yf.download(tickers, start, end, group_by="ticker", progress=False)
 
-    #     tickers = [f"{r.ticker}=X" for r in reqs]
-    #     start = min(r.start for r in reqs)
-    #     end = max(r.end for r in reqs)
-    #     with warnings.catch_warnings(record=True):
-    #         warnings.simplefilter("ignore")
-    #         df = yf.download(tickers, start, end, group_by="ticker", progress=False)
-
-    #     df = self._batch_clean(df)
-    #     lst = [df[ticker] for ticker in tickers]
-    #     return lst
+        df = self._batch_clean(df, tickers)
+        return [ForexPrice(pair.copy(), self.name, df[ticker])
+                for pair, ticker in zip(pairs, tickers)]

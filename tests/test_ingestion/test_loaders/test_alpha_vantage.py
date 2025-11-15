@@ -12,9 +12,9 @@ def test_alpha_vantage_download(mock_get):
     mock_get.return_value.headers = {"Content-Type": "text/csv"}
     mock_get.return_value.text = \
         "timestamp,open,high,low,close\n" \
-        "2024-01-03,3,3,3,3\n" \
-        "2024-01-02,2,2,2,2\n" \
-        "2024-01-01,1,1,1,1\n"  # Alpha Vantage gives most recent data at the top
+        "2024-01-03,9,10,11,12\n" \
+        "2024-01-02,5,6,7,8\n" \
+        "2024-01-01,1,2,3,4\n"  # Alpha Vantage gives data in descending order
 
     loader = AlphaVantageForex("api_key")
     pair = make_pair("ABCDEF")
@@ -26,9 +26,9 @@ def test_alpha_vantage_download(mock_get):
     assert data.source == "alpha_vantage"
 
     expected = pd.DataFrame([
-            [1, 1, 1, 1, 0],
-            [2, 2, 2, 2, 0],
-            [3, 3, 3, 3, 0]
+            [1, 2, 3, 4, 0],
+            [5, 6, 7, 8, 0],
+            [9, 10, 11, 12, 0]
         ],
         columns=["open", "high", "low", "close", "volume"],
         index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="timestamp")

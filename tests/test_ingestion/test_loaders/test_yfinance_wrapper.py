@@ -8,13 +8,14 @@ from fxpipeline.ingestion.loaders import YFinanceForex
 
 @patch("fxpipeline.ingestion.loaders.yfinance_wrapper.yf.download")
 def test_yfinance_download(mock_download):
-    cols = ["Close", "High", "Low", "Open", "Volume"]
+    # using group_by="ticker"
+    cols = ["Open", "High", "Low", "Close", "Adj Close", "Volume"]
     df = pd.DataFrame([
-            [1, 1, 1, 1, 10],
-            [2, 2, 2, 2, 20],
-            [3, 3, 3, 3, 30]
+            [1, 2, 3, 4, 5, 10],
+            [6, 7, 8, 9, 10, 20],
+            [11, 12, 13, 14, 15, 30]
         ],
-        columns=pd.MultiIndex.from_tuples(  # using group_by="ticker"
+        columns=pd.MultiIndex.from_tuples(
             [("ABCDEF=X", col) for col in cols],
             names=["Ticker", "Price"]
         ),
@@ -33,55 +34,75 @@ def test_yfinance_download(mock_download):
     assert data.source == "yfinance"
 
     expected = pd.DataFrame([
-            [1, 1, 1, 1, 10],
-            [2, 2, 2, 2, 20],
-            [3, 3, 3, 3, 30]
+            [1, 2, 3, 4, 10],
+            [6, 7, 8, 9, 20],
+            [11, 12, 13, 14, 30]
         ],
-        columns = ["open", "high", "low", "close", "volume"],
+        columns=["open", "high", "low", "close", "volume"],
         index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="timestamp")
     )
     pd.testing.assert_frame_equal(data.df, expected)
 
 
 
-# @patch("fxpipeline.ingestion.loaders.yfinance_wrapper.yf.download")
-# def test_yfinance_batch_download(mock_download):
-#     df = pd.DataFrame({
-#             "Close_1": [1, 2, 3],
-#             "High_1": [1, 2, 3],
-#             "Low_1": [1, 2, 3],
-#             "Open_1": [1, 2, 3],
-#             "Volume_1": [100, 200, 300],
-#             "Close_2": [10, 20, 30],
-#             "High_2": [10, 20, 30],
-#             "Low_2": [10, 20, 30],
-#             "Open_2": [10, 20, 30],
-#             "Volume_2": [100, 200, 300]
-#         }, index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="Date")
-#     )
+@patch("fxpipeline.ingestion.loaders.yfinance_wrapper.yf.download")
+def test_yfinance_batch_download(mock_download):
+    # using group_by="ticker"
+    tickers = ["ABCDEF=X", "ABCXYZ=X"]
+    cols = ["Open", "High", "Low", "Close", "Adj Close", "Volume"]
+    df = pd.DataFrame([
+            [1, 2, 3, 4, 5, 100, 51, 52, 53, 54, 55, 100],
+            [6, 7, 8, 9, 10, 200, 56, 57, 58, 59, 60, 200],
+            [11, 12, 13, 14, 15, 300, 61, 62, 63, 64, 65, 300]
+        ],
+        columns=pd.MultiIndex.from_tuples(
+            [(ticker, col) for ticker in tickers for col in cols],
+            names=["Ticker", "Price"]
+        ),
+        index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="Date")
+    )
 
-#     df.index.name = "Date"
-#     columns = [
-#         ("ABCDEF=X", "Open"), ("ABCDEF=X", "High"), ("ABCDEF=X", "Low"), ("ABCDEF=X", "Close"),
-#         ("ABCDEF=X", "Volume"),
-#         ("ABCXYZ=X", "Open"), ("ABCXYZ=X", "High"), ("ABCXYZ=X", "Low"), ("ABCXYZ=X", "Close"),
-#         ("ABCXYZ=X", "Volume")
-#         ]
-#     df.columns = pd.MultiIndex.from_tuples(columns)
-#     df.columns.names = ["Ticker", "Price"]
+    mock_download.return_value = df
 
-#     mock_download.return_value = df
+    loader = YFinanceForex()
+    pair_1 = make_pair("ABCDEF")
+    pair_2 = make_pair("ABCXYZ")
+    lst = loader.batch_download(
+        [pair_1, pair_2],
+        pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")
+    )
 
-#     loader = YFinanceForex()
-#     lst = loader.batch_download(
-#         list(map(make_pair, ["ABCDEF", "ABCXYZ"])),
-#         pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-03")
-#     )
+    assert isinstance(lst, list)
+    assert len(lst) == 2
 
-#     assert isinstance(lst, list)
-#     assert len(lst) == 2
-#     assert isinstance(lst[0], pd.DataFrame)
-#     assert isinstance(lst[1], pd.DataFrame)
+    # lst[0]
+    assert lst[0].pair == pair_1
+    assert lst[0].pair is not pair_1
 
-#     pd.testing.assert_frame_equal(lst[0], )
-#     pd.testing.assert_frame_equal(lst[1], )
+    assert lst[0].source == "yfinance"
+
+    expected = pd.DataFrame([
+            [1, 2, 3, 4, 100],
+            [6, 7, 8, 9, 200],
+            [11, 12, 13, 14, 300]
+        ],
+        columns=["open", "high", "low", "close", "volume"],
+        index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="timestamp")
+    )
+    pd.testing.assert_frame_equal(lst[0].df, expected)
+
+    # lst[1]
+    assert lst[1].pair == pair_2
+    assert lst[1].pair is not pair_2
+
+    assert lst[1].source == "yfinance"
+
+    expected = pd.DataFrame([
+            [51, 52, 53, 54, 100],
+            [56, 57, 58, 59, 200],
+            [61, 62, 63, 64, 300]
+        ],
+        columns=["open", "high", "low", "close", "volume"],
+        index=pd.Index([pd.Timestamp(f"2024-01-0{i}") for i in (1, 2, 3)], name="timestamp")
+    )
+    pd.testing.assert_frame_equal(lst[1].df, expected)
