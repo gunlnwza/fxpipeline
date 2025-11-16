@@ -32,7 +32,7 @@ class ForexPriceLoader(ABC):
                        end: pd.Timestamp, interval: str = "1d") -> list[ForexPrice]:
         """
         Call download() in a loop.
-        But, Concrete class like YFinanceForex may optimize.
+        But, concrete class like YFinanceForex may optimize.
         """
         res = []
         for pair in pairs:
