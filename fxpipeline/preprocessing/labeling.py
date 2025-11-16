@@ -35,10 +35,10 @@ def label_entry_signal(price_df: pd.DataFrame, pip: float = 0.0001,
     Label `price_df` with signal by looking at `col`
 
     Supported kwargs:
-    - future_rows: int
-    - sell: bool
-    - required_reward_to_risk: float
-    - required_win: float
+    - future_rows: int = 20
+    - sell: bool = False
+    - required_reward_to_risk: float = 2.0
+    - required_win: float = 200.0
     """
     df = price_df.copy()
     future_rows = kwargs.pop("future_rows", 20)
@@ -47,12 +47,9 @@ def label_entry_signal(price_df: pd.DataFrame, pip: float = 0.0001,
     future_pips = pip_diff(df[col], pip, future_rows)
     sig = []
     for i in range(len(future_pips)):
-        if np.isnan(future_pips.iloc[i, -1]):
-            break
         sig.append(should_enter(future_pips.iloc[i].to_numpy(), **kwargs))
-    sig = pd.Series(sig, dtype="boolean", name=name)
+    sig = pd.Series(sig, dtype="bool", name=name)
 
     sig.index = df.index[:len(sig)]
     df = df.join(sig, how="outer")
-
     return df
