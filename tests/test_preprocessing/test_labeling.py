@@ -106,7 +106,8 @@ def test_label_entry_signal():
         {"close": [1, 2, 3, 4, 5, 10, 9, 8, 7, 6]}
     )
     price_df = label_entry_signal(price_df, pip=0.0001, **{"future_rows": 1})
-    
+
     expected = price_df.copy()
-    expected["should_buy"] = pd.Series([True, True, True, True, True, False, False, False, False, None], dtype=bool)
+    expected["should_buy"] = pd.Series(
+        [True, True, True, True, True, False, False, False, False, None], dtype="boolean")
     pd.testing.assert_frame_equal(price_df, expected)

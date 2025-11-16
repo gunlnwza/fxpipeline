@@ -2,12 +2,11 @@ import numpy as np
 import pandas as pd
 
 from .pips import pip_diff
-from .utils import smooth_boolean_series
 
 
 def should_enter(pips: np.ndarray, sell: bool = False,
                  required_reward_to_risk: float = 2.0,
-                 required_win: float = 200.0) -> bool:
+                 required_win: float = 200.0) -> bool | None:
     """Look at `pips` shape and judge if it would be a good trade."""
     if pips[0] != 0:
         raise ValueError("First value of 'pips' must be 0")
@@ -34,26 +33,24 @@ def label_entry_signal(price_df: pd.DataFrame, pip: float = 0.0001,
                        col: str = "close", **kwargs) -> pd.DataFrame:
     """
     Label `price_df` with signal by looking at `col`
-    
+
     Supported kwargs:
     - future_rows: int
     - sell: bool
     - required_reward_to_risk: float
     - required_win: float
-    - smooth: bool
     """
     df = price_df.copy()
     future_rows = kwargs.pop("future_rows", 20)
-    smooth = kwargs.pop("smooth", False)
     name = "should_sell" if kwargs.get("sell") else "should_buy"
 
     future_pips = pip_diff(df[col], pip, future_rows)
-    sig = (
-        future_pips.apply(lambda row: should_enter(row, **kwargs), raw=True, axis=1)
-        .rename(name)
-    )
-    if smooth:
-        sig = smooth_boolean_series(sig, window=5)  # the method cause lag in labelings
+    sig = []
+    for i in range(len(future_pips)):
+        if np.isnan(future_pips.iloc[i, -1]):
+            break
+        sig.append(should_enter(future_pips.iloc[i].to_numpy(), **kwargs))
+    sig = pd.Series(sig, dtype="boolean", name=name)
 
     sig.index = df.index[:len(sig)]
     df = df.join(sig, how="outer")
