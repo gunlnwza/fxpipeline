@@ -16,6 +16,8 @@ def series_to_segments(entry_signal: pd.Series) -> list[tuple[bool | int | int]]
 
 def smooth_segments(segments: list[tuple[bool | int | int]],
                     min_width=3) -> list[tuple[bool | int | int]]:
+    """min_width=1 means no change"""
+
     # Filter out too short segments
     segments = [s for s in segments if s[2] - s[1] >= min_width]
 
@@ -59,5 +61,7 @@ def segments_to_series(segments: list[tuple[bool | int | int]], length=None) -> 
 def smooth_series(series: pd.Series, min_width=3) -> pd.Series:
     """Remove the little noisy segments"""
     segments = series_to_segments(series)
-    segments = smooth_segments(segments)
-    return segments_to_series(segments)
+    segments = smooth_segments(segments, min_width)
+    res = segments_to_series(segments)
+    res.index = series.index
+    return res

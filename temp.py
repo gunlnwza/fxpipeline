@@ -16,23 +16,21 @@ def plot_signal(ax, signal: pd.Series, color: str):
 
 def main():
     data = load_forex_prices("EURUSD", "alpha_vantage")
-    # prices = data[0].df.copy()
     prices = data[0].df
-    df = prices.iloc[-200:][["close"]]
+    df = prices
 
-    df = label_entry_signal(df, **{"future_rows": 100, "required_win": 500})
-    s = smooth_series(df["should_buy"])
-    print(s)
-    df["should_buy_smooth"] = s
+    w = 5
 
-    print(df)
+    df = label_entry_signal(df, **{"future_rows": 100, "required_win": 500, "required_reward_to_risk": 3})
+    df["smooth_should_buy"] = smooth_series(df["should_buy"], min_width=w)
 
-    # fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
-    # axes[0].plot(df["close"], color="black")
-    # axes[1].plot(df["close"], color="black")
-    # plot_signal(axes[0], df["should_buy"], "green")
-    # plot_signal(axes[1], df["should_buy_smooth"], "green")
-    # plt.show()
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+    fig.suptitle(f"min_width = {w}")
+    axes[0].plot(df["close"], color="black")
+    axes[1].plot(df["close"], color="black")
+    plot_signal(axes[0], df["should_buy"], "green")
+    plot_signal(axes[1], df["smooth_should_buy"], "green")
+    plt.show()
 
 
 if __name__ == "__main__":
