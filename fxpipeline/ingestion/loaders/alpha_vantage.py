@@ -58,8 +58,7 @@ class AlphaVantageForex(ForexPriceLoader):
         res = requests.get("https://www.alphavantage.co/query", params, timeout=10)
         if not res.ok:
             raise NotDownloadedError(
-                f"Alpha Vantage: HTTP {res.status_code} — cannot download {pair}"
-                )
+                f"Alpha Vantage: HTTP {res.status_code} — cannot download {pair}")
 
         content_type = res.headers.get("Content-Type", "")
         if content_type and "json" in content_type.lower():
