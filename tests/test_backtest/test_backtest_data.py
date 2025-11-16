@@ -51,8 +51,8 @@ def test_get_info(buy):
     assert info["type"] == "buy"
     assert info["open_i"] == 0
     assert info["open_price"] == 21
-    assert info["close_i"] == 1
-    assert info["close_price"] == 42
+    assert info["close_i"] is None
+    assert info["close_price"] is None
 
 
 # --- Data

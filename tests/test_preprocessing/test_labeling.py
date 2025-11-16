@@ -14,6 +14,8 @@ def _make_lines(points: list[tuple[int, int]], n_points: int | None = None) -> n
     return y_full
 
 
+# --- should_enter
+
 def test_not_start_at_zero():
     pips = _make_lines([(0, 1000), (100, 0)])
     with pytest.raises(ValueError):
@@ -98,7 +100,13 @@ def test_plateau_up():
 
 
 # --- label_entry_signal
+
 def test_label_entry_signal():
-    price_df = pd.DataFrame()
-    price_df = label_entry_signal(price_df)
-    # assert
+    price_df = pd.DataFrame(
+        {"close": [1, 2, 3, 4, 5, 10, 9, 8, 7, 6]}
+    )
+    price_df = label_entry_signal(price_df, pip=0.0001, **{"future_rows": 1})
+    
+    expected = price_df.copy()
+    expected["should_buy"] = pd.Series([True, True, True, True, True, False, False, False, False, None], dtype=bool)
+    pd.testing.assert_frame_equal(price_df, expected)

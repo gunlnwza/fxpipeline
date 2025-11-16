@@ -8,9 +8,11 @@ from .utils import smooth_boolean_series
 def should_enter(pips: np.ndarray, sell: bool = False,
                  required_reward_to_risk: float = 2.0,
                  required_win: float = 200.0) -> bool:
-    """Look at 'pips' shape and judge if it's a good trade."""
+    """Look at `pips` shape and judge if it would be a good trade."""
     if pips[0] != 0:
         raise ValueError("First value of 'pips' must be 0")
+    if np.isnan(pips[-1]):  # right of price, not enough data to judge
+        return None
 
     if sell:
         pips *= -1
@@ -27,22 +29,33 @@ def should_enter(pips: np.ndarray, sell: bool = False,
     return reward_to_risk >= required_reward_to_risk
 
 
-# TODO[test]: this feels so experimental, make it tight
-# IDEA: adjust pip dynamically on historical price, maybe by using zigzag indicator
-def label_entry_signal(df: pd.DataFrame, pip: float = 0.0001, col: str = "close", **kwargs):
-    """Label price df with smoothed should_enter column"""
-    df = df.copy()
-
+# IDEA: adjust `required_win` dynamically based on historical price
+def label_entry_signal(price_df: pd.DataFrame, pip: float = 0.0001,
+                       col: str = "close", **kwargs) -> pd.DataFrame:
+    """
+    Label `price_df` with signal by looking at `col`
+    
+    Supported kwargs:
+    - future_rows: int
+    - sell: bool
+    - required_reward_to_risk: float
+    - required_win: float
+    - smooth: bool
+    """
+    df = price_df.copy()
     future_rows = kwargs.pop("future_rows", 20)
-    future_pips = pip_diff(df[col], pip, future_rows)
-
+    smooth = kwargs.pop("smooth", False)
     name = "should_sell" if kwargs.get("sell") else "should_buy"
+
+    future_pips = pip_diff(df[col], pip, future_rows)
     sig = (
         future_pips.apply(lambda row: should_enter(row, **kwargs), raw=True, axis=1)
         .rename(name)
     )
-    sig.index = df.index[:len(sig)]
-    sig = smooth_boolean_series(sig, window=5)
+    if smooth:
+        sig = smooth_boolean_series(sig, window=5)  # the method cause lag in labelings
 
+    sig.index = df.index[:len(sig)]
     df = df.join(sig, how="outer")
+
     return df
