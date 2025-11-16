@@ -34,6 +34,10 @@ def _convert_start_end(start, end, days):
 def fetch_forex_prices(pairs: str | CurrencyPair | list[str | CurrencyPair], source: str,
                        start: str | pd.Timestamp | None = None,
                        end: str | pd.Timestamp | None = None) -> list[ForexPrice]:
+    """
+    Fetch prices from the internet and save to SQLite Cache.
+    Ignore if already have the price.
+    """
     pairs = _convert_pairs(pairs)
     start, end = _convert_start_end(start, end, 30)
 
@@ -64,6 +68,7 @@ def fetch_forex_prices(pairs: str | CurrencyPair | list[str | CurrencyPair], sou
 def load_forex_prices(pairs: str | CurrencyPair | list[str | CurrencyPair], source: str,
                       start: str | pd.Timestamp | None = None,
                       end: str | pd.Timestamp | None = None) -> list[ForexPrice]:
+    """Load prices from local SQLite cache"""
     pairs = _convert_pairs(pairs)
     start, end = _convert_start_end(start, end, 10000)
 
