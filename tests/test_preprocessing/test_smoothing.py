@@ -1,6 +1,7 @@
 import pandas as pd
 
-from fxpipeline.preprocessing.smoothing import series_to_segments, smooth_segments, segments_to_series
+from fxpipeline.preprocessing.smoothing import \
+    series_to_segments, smooth_segments, segments_to_series
 
 
 def test_series_to_segments():
@@ -18,7 +19,7 @@ def test_smooth_segments():
         (True, 57, 61), (False, 61, 62), (True, 62, 75),
         (False, 75, 76), (True, 76, 78), (False, 78, 79), (True, 79, 80), (False, 80, 201)
     ]
-    
+
     res = smooth_segments(segments)
     expected = [(True, 0, 44), (False, 44, 57), (True, 57, 75), (False, 75, 201)]
     assert res == expected

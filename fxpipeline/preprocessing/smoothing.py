@@ -37,9 +37,9 @@ def smooth_segments(segments: list[tuple[bool | int | int]],
     new = []
     for i in range(len(segments)):
         if segments[i][0] is False:
-            l = segments[i - 1][2] if i - 1 >= 0 else 0
-            r = segments[i + 1][1] if i + 1 < len(segments) else segments[i][2]
-            new.append((False, l, r))
+            left = segments[i - 1][2] if i - 1 >= 0 else 0
+            right = segments[i + 1][1] if i + 1 < len(segments) else segments[i][2]
+            new.append((False, left, right))
         else:
             new.append(segments[i])
     segments = new
