@@ -45,7 +45,7 @@ def fetch_forex_prices(pairs: str | CurrencyPair | list[str | CurrencyPair], sou
     loader = get_loader(source)
     res = []
 
-    print(f"📦 Fetching with {source.upper()} API")
+    print(f"📦 Fetching with {source.upper()} API ({start.date()} to {end.date()})")
     sw_0 = Stopwatch()
     for pair in pairs:
         print(f"📈 {pair} [{source}]... ", end="", flush=True)
