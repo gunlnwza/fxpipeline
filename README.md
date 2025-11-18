@@ -4,6 +4,7 @@ A modular foreign-exchange research pipeline for building, labeling, and testing
 
 ## Project Structure
 
+```
 fxpipeline
 ├── core           # Core data classes
 ├── ingestion      # Data loaders (yfinance, AlphaVantage, Polygon)
@@ -11,3 +12,4 @@ fxpipeline
 ├── strategy       # Trading strategy, models (unfinished)
 ├── backtest       # Walk forward validation (unfinished)
 └── utils          # Shared helpers
+```
