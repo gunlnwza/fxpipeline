@@ -1,0 +1,78 @@
+# =====================================
+# Data & Cache
+# =====================================
+.fxpipeline_cache/
+
+*.zip
+*.csv
+*.tsv
+*.json
+*.log
+*.txt
+*.db
+*.sqlite3
+*.h5
+*.feather
+*.parquet
+*.joblib
+
+# =====================================
+# Python
+# =====================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+.venv-dev/
+venv/
+env/
+.Python
+
+# Test & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+
+!requirements*.txt
+
+# =====================================
+# Jupyter Notebooks
+# =====================================
+notebooks/
+*.ipynb
+.ipynb_checkpoints/
+
+# =====================================
+# Output Files
+# =====================================
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.svg
+*.mp4
+
+# =====================================
+# IDE / System Files
+# =====================================
+.DS_Store
+.idea/
+.vscode/
+
+# =====================================
+# Environment / Secrets
+# =====================================
+.env
+.env.*
+**/.env
+**/.env.*
+
+# =====================================
+# Project-specific trash or scratch
+# =====================================
+.trash/
+ref/
