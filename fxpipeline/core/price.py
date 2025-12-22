@@ -41,7 +41,7 @@ class Candle:
     @classmethod
     def from_array(cls, arr):
         return cls(*arr)
-    
+
     @property
     def height(self) -> float:
         """
@@ -49,7 +49,7 @@ class Candle:
         - Always positive
         """
         return self.high - self.low
-    
+
     @property
     def top_wick(self) -> float:
         """
@@ -57,16 +57,16 @@ class Candle:
         - Always positive
         """
         return self.high - max(self.open, self.close)
-    
+
     @property
     def body(self) -> float:
         """
         Size of the body
         - (+) is a green candle
-        - (-) is a red candle 
+        - (-) is a red candle
         """
         return self.close - self.open
-    
+
     @property
     def bottom_wick(self) -> float:
         """

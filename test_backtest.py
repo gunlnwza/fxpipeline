@@ -1,9 +1,7 @@
 from dotenv import load_dotenv
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
-from fxpipeline.core import CurrencyPair, ForexPrices, Data
+from fxpipeline.core import Data
 from fxpipeline.ingestion import load_forex_prices
 from fxpipeline.backtest import Backtester, Strategy
 from fxpipeline.utils import Stopwatch

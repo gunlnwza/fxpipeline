@@ -1,5 +1,3 @@
-import pandas as pd
-
 from .strategy import Strategy
 from ..core import Data, Trade, TradeIntent, CandlesWindow
 
@@ -15,13 +13,12 @@ class Backtester:
         # Config
         self.data = data
         self.strategy = strategy
-        self.bars = 100        
+        self.bars = 100
 
     def reset(self):
         # State
         self.window = CandlesWindow(
-            self.data.price.pair,
-            self.data.price.df.iloc[: self.bars].to_numpy()
+            self.data.price.pair, self.data.price.df.iloc[: self.bars].to_numpy()
         )
         self.trade = None
 

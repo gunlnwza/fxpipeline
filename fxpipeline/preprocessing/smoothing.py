@@ -26,11 +26,11 @@ def smooth_segments(
     i = 0
     new = []
     while i < len(segments):
-        val, l, r = segments[i]
+        val, left, right = segments[i]
         while i < len(segments) - 1 and segments[i][0] == segments[i + 1][0]:
-            r = segments[i + 1][2]
+            right = segments[i + 1][2]
             i += 1
-        new.append((val, l, r))
+        new.append((val, left, right))
         i += 1
     segments = new
 
