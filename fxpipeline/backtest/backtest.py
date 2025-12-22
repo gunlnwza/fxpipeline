@@ -24,15 +24,17 @@ class Backtester:
         self.trade = None
 
         # Metrics
+        self._pips_list = []
         self.pips = 0
 
-    def open_trade(self, i: TradeIntent):
+    def open_trade(self, intent: TradeIntent):
         assert self.trade is None
+        assert intent is not None
 
         # TODO: polish, make it accurate, implement buy stop/sell stop?
         # w = self.window
+        i = intent
         t = Trade(i.pair, i.open_price, i.stop_loss, i.take_profit)
-        print("> open_trade:", t)
         self.trade = t
 
     def close_trade(self):
@@ -41,25 +43,26 @@ class Backtester:
         t = self.trade
         t.close(self.window.price)
         self.pips += t.pips
-        print(f"> close_trade: made {t.pips} pips")
         self.trade = None
 
     def manage_trade(self):
-        print("price=", self.window.price)
         if not self.trade:
             intent = self.strategy.get_intent(self.window)
-            self.open_trade(intent)
+            if intent:
+                self.open_trade(intent)
         else:
             if self.trade.must_close(self.window.price):
                 self.close_trade()
 
     def run(self):
         df = self.data.price.df
-        for timestamp, row in df.iloc[self.bars:].iterrows():
-            print(self.window.ohlcv)
+        for i, t_ohlcv in enumerate(df.iloc[self.bars:].iterrows()):
+            _, ohlcv = t_ohlcv
             self.manage_trade()
-            print()
-            self.window.append(row)
+
+            self.window.append(ohlcv)
+            self._pips_list.append(self.pips)
 
         if self.trade:
             self.close_trade()
+        self._pips_list.append(self.pips)
