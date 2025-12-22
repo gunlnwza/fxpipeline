@@ -1,11 +1,7 @@
-import random
-
-import numpy as np
 import pandas as pd
 
 from .strategy import Strategy
-from .bt_core import Trade, TradeIntent, PriceWindow  # TODO: merge with core/ later
-from ..core import CurrencyPair, ForexPrices, Data
+from ..core import CurrencyPair, ForexPrices, Data, Trade, TradeIntent, CandlesWindow
 
 
 class Backtester:
@@ -21,7 +17,7 @@ class Backtester:
         self.bars = 5  # mock with 5, real is 100 bars
 
         # State
-        self.window = PriceWindow(
+        self.window = CandlesWindow(
             pair=data.price.pair, 
             ohlc=data.price.df.iloc[:self.bars].to_numpy()
         )
@@ -67,8 +63,6 @@ class Backtester:
 
 
 if __name__ == "__main__":
-    random.seed(42)
-
     df = pd.DataFrame([
         [1.5, 1.9, 1.1, 1.7],
         [2.5, 2.9, 2.1, 2.7],

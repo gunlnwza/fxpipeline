@@ -1,11 +1,11 @@
-from .bt_core import PriceWindow, TradeIntent
+from ..core import CandlesWindow, TradeIntent
 
 
 class Strategy:
     def __init__(self):
         pass
 
-    def get_intent(self, window: PriceWindow):
+    def get_intent(self, window: CandlesWindow):
         cur = window.candle(-1)
         prev = window.candle(-2)
 

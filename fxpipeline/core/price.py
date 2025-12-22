@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 from .currency import CurrencyPair
@@ -27,3 +28,36 @@ class ForexPrices:
 class PricePoint:
     timestamp: pd.Timestamp
     price: float
+
+
+@dataclass
+class Candle:
+    open: float
+    high: float
+    low: float
+    close: float
+
+    @classmethod
+    def from_array(cls, arr):
+        return cls(*arr)
+
+
+@dataclass
+class CandlesWindow:
+    pair: CurrencyPair
+    ohlc: np.ndarray
+
+    @property
+    def price(self):
+        return self.ohlc[-1, -1]
+
+    def append(self, ohlc_row):
+        for j in range(len(self.ohlc) - 1):
+            self.ohlc[j] = self.ohlc[j + 1]
+        self.ohlc[-1] = ohlc_row
+
+    def __getitem__(self, i: int) -> np.ndarray:
+        return self.ohlc[i]
+
+    def candle(self, i: int) -> Candle:
+        return Candle.from_array(self.ohlc[i])

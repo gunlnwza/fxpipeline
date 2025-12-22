@@ -1,42 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
-import numpy as np
-
 from ..core import CurrencyPair
-
-
-@dataclass
-class Candle:
-    open: float
-    high: float
-    low: float
-    close: float
-
-    @classmethod
-    def from_array(cls, arr):
-        return cls(*arr)
-
-
-@dataclass
-class PriceWindow:
-    pair: CurrencyPair
-    ohlc: np.ndarray
-
-    @property
-    def price(self):
-        return self.ohlc[-1, -1]
-
-    def append(self, ohlc_row):
-        for j in range(len(self.ohlc) - 1):
-            self.ohlc[j] = self.ohlc[j + 1]
-        self.ohlc[-1] = ohlc_row
-
-    def __getitem__(self, i: int):
-        return self.ohlc[i]
-
-    def candle(self, i: int) -> Candle:
-        return Candle.from_array(self.ohlc[i])
 
 
 class TradeSide(Enum):
