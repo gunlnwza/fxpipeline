@@ -19,7 +19,7 @@ class Backtester:
         # State
         self.window = CandlesWindow(
             pair=data.price.pair, 
-            ohlc=data.price.df.iloc[:self.bars].to_numpy()
+            ohlcv=data.price.df.iloc[:self.bars].to_numpy()
         )
         self.trade = None
 
@@ -30,9 +30,10 @@ class Backtester:
         assert self.trade is None
 
         # TODO: polish, make it accurate, implement buy stop/sell stop?
-        w = self.window
-        self.trade = Trade(w.pair, w.price, i.stop_loss, i.take_profit)
-        print("> open_trade")
+        # w = self.window
+        t = Trade(i.pair, i.open_price, i.stop_loss, i.take_profit)
+        print("> open_trade:", t)
+        self.trade = t
 
     def close_trade(self):
         assert self.trade is not None
@@ -44,6 +45,7 @@ class Backtester:
         self.trade = None
 
     def manage_trade(self):
+        print("price=", self.window.price)
         if not self.trade:
             intent = self.strategy.get_intent(self.window)
             self.open_trade(intent)
@@ -54,7 +56,7 @@ class Backtester:
     def run(self):
         df = self.data.price.df
         for timestamp, row in df.iloc[self.bars:].iterrows():
-            print(self.window.ohlc)
+            print(self.window.ohlcv)
             self.manage_trade()
             print()
             self.window.append(row)

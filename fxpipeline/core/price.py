@@ -36,6 +36,7 @@ class Candle:
     high: float
     low: float
     close: float
+    volume: int
 
     @classmethod
     def from_array(cls, arr):
@@ -45,19 +46,22 @@ class Candle:
 @dataclass
 class CandlesWindow:
     pair: CurrencyPair
-    ohlc: np.ndarray
+    ohlcv: np.ndarray
+
+    def __post_init__(self):
+        assert len(self.ohlcv[0]) == 5
 
     @property
     def price(self):
-        return self.ohlc[-1, -1]
+        return self.ohlcv[-1, 3]
 
-    def append(self, ohlc_row):
-        for j in range(len(self.ohlc) - 1):
-            self.ohlc[j] = self.ohlc[j + 1]
-        self.ohlc[-1] = ohlc_row
+    def append(self, ohlcv_row):
+        for j in range(len(self.ohlcv) - 1):
+            self.ohlcv[j] = self.ohlcv[j + 1]
+        self.ohlcv[-1] = ohlcv_row
 
     def __getitem__(self, i: int) -> np.ndarray:
-        return self.ohlc[i]
+        return self.ohlcv[i]
 
     def candle(self, i: int) -> Candle:
-        return Candle.from_array(self.ohlc[i])
+        return Candle.from_array(self.ohlcv[i])

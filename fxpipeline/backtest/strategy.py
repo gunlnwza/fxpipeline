@@ -10,7 +10,7 @@ class Strategy:
         prev = window.candle(-2)
 
         if cur.close > prev.close:
-            risk = cur.close - cur.low
+            risk = (cur.close - cur.low)
             return TradeIntent(
                 window.pair,
                 cur.close,

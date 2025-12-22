@@ -48,12 +48,12 @@ class Trade(ATrade):
         return (self.close_price - self.open_price) / self.pair.pip
 
     def must_close(self, price: float):
-        p, sl, tp = self.prices
+        _, sl, tp = self.prices
         if self.type == TradeSide.BUY:
-            if p < sl or p > tp:
+            if price < sl or price > tp:
                 return True
         else:
-            if p > sl or p < tp:
+            if price > sl or price < tp:
                 return True
         return False
 
