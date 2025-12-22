@@ -15,11 +15,13 @@ class Backtester:
         # Config
         self.data = data
         self.strategy = strategy
-        self.bars = 5  # mock with 5, real is 100 bars
+        self.bars = 100        
 
+    def reset(self):
         # State
         self.window = CandlesWindow(
-            pair=data.price.pair, ohlcv=data.price.df.iloc[: self.bars].to_numpy()
+            self.data.price.pair,
+            self.data.price.df.iloc[: self.bars].to_numpy()
         )
         self.trade = None
 
@@ -55,9 +57,9 @@ class Backtester:
                 self.close_trade()
 
     def run(self):
-        df = self.data.price.df
-        for i, t_ohlcv in enumerate(df.iloc[self.bars :].iterrows()):
-            _, ohlcv = t_ohlcv
+        self.reset()
+
+        for timestamp, ohlcv in self.data.price.df.iloc[self.bars :].iterrows():
             self.manage_trade()
 
             self.window.append(ohlcv)

@@ -56,8 +56,7 @@ class CandlesWindow:
         return self.ohlcv[-1, 3]
 
     def append(self, ohlcv_row):
-        for j in range(len(self.ohlcv) - 1):
-            self.ohlcv[j] = self.ohlcv[j + 1]
+        self.ohlcv[:-1] = self.ohlcv[1:]
         self.ohlcv[-1] = ohlcv_row
 
     def __getitem__(self, i: int) -> np.ndarray:

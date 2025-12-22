@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from fxpipeline.core import CurrencyPair, ForexPrices, Data
 from fxpipeline.ingestion import load_forex_prices
 from fxpipeline.backtest import Backtester, Strategy
+from fxpipeline.utils import Stopwatch
 
 
 if __name__ == "__main__":
@@ -28,10 +29,16 @@ if __name__ == "__main__":
     prices = load_forex_prices("USDJPY", source="alpha_vantage")
 
     data = Data(prices)
-    st = Strategy()
-    bt = Backtester(data, st)
+    strategy = Strategy()
+    bt = Backtester(data, strategy)
 
+    sw = Stopwatch()
     bt.run()
+
+    print("Pips:", bt.pips)
+    print("Time:", sw)
+    print()
+
     plt.plot(bt._pips_list)
     plt.title("Buy if cur_close > prev_close, with 2:1 reward-to-risk")
     plt.axhline(0, ls="--", color="black")
