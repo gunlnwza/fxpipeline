@@ -1,7 +1,10 @@
-SRCS := fxpipeline tests
+all:
 
 lint:
-	flake8 $(SRCS) --max-line-length 100 --extend-exclude .trash,.venv,__init__.py
+	ruff check .
+
+format:
+	ruff format
 
 PAT ?= .
 test:
@@ -13,4 +16,4 @@ cov:
 count:
 	find . -path './.venv' -prune -o -name '*.py' -exec wc -l {} +
 
-.PHONY: lint test cov count
+.PHONY: all lint test cov count
