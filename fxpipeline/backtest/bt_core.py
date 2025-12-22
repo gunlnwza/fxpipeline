@@ -1,8 +1,21 @@
 from dataclasses import dataclass
+from enum import Enum
 
 import numpy as np
 
 from ..core import CurrencyPair
+
+
+@dataclass
+class Candle:
+    open: float
+    high: float
+    low: float
+    close: float
+
+    @classmethod
+    def from_array(cls, arr):
+        return cls(*arr)
 
 
 @dataclass
@@ -22,16 +35,15 @@ class PriceWindow:
     def __getitem__(self, i: int):
         return self.ohlc[i]
 
-
-@dataclass
-class TradeIntent:
-    pair: CurrencyPair
-    open_price: float
-    stop_loss: float
-    take_profit: float
+    def candle(self, i: int) -> Candle:
+        return Candle.from_array(self.ohlc[i])
 
 
-# Trade and TradeIntent should inherit from this
+class TradeSide(Enum):
+    BUY = 1
+    SELL = -1
+
+
 @dataclass
 class ATrade:
     pair: CurrencyPair
@@ -39,30 +51,45 @@ class ATrade:
     stop_loss: float
     take_profit: float
 
-    def type(self):  # should return enum
-        assert self.stop_loss != self.open_price
+    @property
+    def prices(self):
+        return self.open_price, self.stop_loss, self.take_profit
 
+    def __post_init__(self):
+        p, sl, tp = self.prices
+        assert (sl < p < tp) or (sl > p > tp)
+
+    @property
+    def type(self) -> TradeSide:
         if self.stop_loss < self.open_price:
-            return "buy"
+            return TradeSide.BUY
         else:
-            return "sell"
+            return TradeSide.SELL
+
 
 @dataclass
-class Trade:
-    pair: CurrencyPair
-    open_price: float
-    stop_loss: float
-    take_profit: float
+class TradeIntent(ATrade):
+    pass
+
+
+@dataclass
+class Trade(ATrade):
     close_price: float = None
 
     @property
     def pips(self):
-        assert self.close_price
+        assert self.close_price is not None
+
         return (self.close_price - self.open_price) / self.pair.pip
 
     def must_close(self, price: float):
-        if price < self.stop_loss or price > self.take_profit:
-            return True
+        p, sl, tp = self.prices
+        if self.type == TradeSide.BUY:
+            if p < sl or p > tp:
+                return True
+        else:
+            if p > sl or p < tp:
+                return True
         return False
 
     def close(self, price: float):

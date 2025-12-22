@@ -27,12 +27,3 @@ class ForexPrice:
 class PricePoint:
     timestamp: pd.Timestamp
     price: float
-
-
-@dataclass
-class Candle:
-    timeestamp: pd.Timestamp
-    open: float
-    high: float
-    low: float
-    close: float

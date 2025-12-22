@@ -33,13 +33,13 @@ class Backtester:
     def open_trade(self, i: TradeIntent):
         assert self.trade is None
 
-        # TODO: polish, make it accurate
+        # TODO: polish, make it accurate, implement buy stop/sell stop?
         w = self.window
         self.trade = Trade(w.pair, w.price, i.stop_loss, i.take_profit)
         print("> open_trade")
 
     def close_trade(self):
-        assert self.trade
+        assert self.trade is not None
 
         t = self.trade
         t.close(self.window.price)
@@ -59,25 +59,29 @@ class Backtester:
         for timestamp, row in df.iloc[self.bars:].iterrows():
             print(self.window.ohlc)
             self.manage_trade()
-            self.window.append(row)
             print()
+            self.window.append(row)
+
+        if self.trade:
+            self.close_trade()
 
 
 if __name__ == "__main__":
     random.seed(42)
 
     df = pd.DataFrame([
-        [1, 1, 1, 1],
-        [2, 2, 2, 2],
-        [3, 3, 3, 3],
-        [4, 4, 4, 4], 
-        [5, 5, 5, 5],
-        [6, 6, 6, 6],
-        [7, 7, 7, 7],
-        [8, 8, 8, 8],
-        [9, 9, 9, 9],
-        [10, 10, 10, 10]
+        [1.5, 1.9, 1.1, 1.7],
+        [2.5, 2.9, 2.1, 2.7],
+        [3.5, 3.9, 3.1, 3.7],
+        [4.5, 4.9, 4.1, 4.7], 
+        [5.5, 5.9, 5.1, 5.7],
+        [6.5, 6.9, 6.1, 6.7],
+        [7.5, 7.9, 7.1, 7.7],
+        [8.5, 8.9, 8.1, 8.7],
+        [9.5, 9.9, 9.1, 9.7],
+        [10.5, 10.9, 10.1, 10.7]
     ])
+
     d = Data(ForexPrice(CurrencyPair("ABC", "DEF", pip=0.0001), "mock", df))
     st = Strategy()
 
