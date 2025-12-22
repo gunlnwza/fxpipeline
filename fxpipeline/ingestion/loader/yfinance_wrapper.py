@@ -5,7 +5,7 @@ import pandas as pd
 import yfinance as yf
 
 from ..base import ForexPriceLoader
-from ...core import CurrencyPair, ForexPrice
+from ...core import CurrencyPair, ForexPrices
 
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class YFinanceForex(ForexPriceLoader):
         start: pd.Timestamp,
         end: pd.Timestamp,
         interval: str = "1d",
-    ) -> ForexPrice:
+    ) -> ForexPrices:
         logger.debug(f"Downloading {pair} with yfinance")
 
         ticker = f"{pair}=X"
@@ -47,7 +47,7 @@ class YFinanceForex(ForexPriceLoader):
             df = yf.download(ticker, start, end, group_by="ticker", progress=False)
 
         df = self._clean(df)
-        return ForexPrice(pair.copy(), self.name, df)
+        return ForexPrices(pair.copy(), self.name, df)
 
     @staticmethod
     def _batch_clean(df: pd.DataFrame) -> pd.DataFrame:
@@ -71,7 +71,7 @@ class YFinanceForex(ForexPriceLoader):
         start: pd.Timestamp,
         end: pd.Timestamp,
         interval: str = "D1",
-    ) -> list[ForexPrice]:
+    ) -> list[ForexPrices]:
         logger.debug(f"Downloading {[pair.ticker for pair in pairs]} with yfinance")
 
         tickers = [f"{pair}=X" for pair in pairs]
@@ -81,6 +81,6 @@ class YFinanceForex(ForexPriceLoader):
 
         df = self._batch_clean(df)
         return [
-            ForexPrice(pair.copy(), self.name, df[ticker])
+            ForexPrices(pair.copy(), self.name, df[ticker])
             for pair, ticker in zip(pairs, tickers)
         ]

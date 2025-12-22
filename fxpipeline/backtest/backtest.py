@@ -5,7 +5,7 @@ import pandas as pd
 
 from .strategy import Strategy
 from .bt_core import Trade, TradeIntent, PriceWindow  # TODO: merge with core/ later
-from ..core import CurrencyPair, ForexPrice, Data
+from ..core import CurrencyPair, ForexPrices, Data
 
 
 class Backtester:
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         [10.5, 10.9, 10.1, 10.7]
     ])
 
-    d = Data(ForexPrice(CurrencyPair("ABC", "DEF", pip=0.0001), "mock", df))
+    d = Data(ForexPrices(CurrencyPair("ABC", "DEF", pip=0.0001), "mock", df))
     st = Strategy()
 
     bt = Backtester(d, st)

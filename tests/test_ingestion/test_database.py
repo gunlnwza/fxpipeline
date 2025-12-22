@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from fxpipeline.core import ForexPrice, CurrencyPair, make_pair
+from fxpipeline.core import ForexPrices, CurrencyPair, make_pair
 from fxpipeline.ingestion.database.sqlite_db import SQLiteDatabase
 
 """
@@ -20,7 +20,7 @@ def pair() -> CurrencyPair:
 
 
 @pytest.fixture
-def data(pair) -> ForexPrice:
+def data(pair) -> ForexPrices:
     df = pd.DataFrame(
         [
             [1.0, 2.0, 3.0, 4.0, 5],
@@ -34,11 +34,11 @@ def data(pair) -> ForexPrice:
             [pd.Timestamp(f"2025-01-0{i}") for i in range(1, 6)], name="timestamp"
         ),
     )
-    return ForexPrice(pair, "source", df)
+    return ForexPrices(pair, "source", df)
 
 
 @pytest.fixture
-def data_2(data) -> ForexPrice:
+def data_2(data) -> ForexPrices:
     data = data.copy()
     data.source = "source_2"
     return data

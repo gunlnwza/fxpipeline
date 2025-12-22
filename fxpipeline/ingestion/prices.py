@@ -5,7 +5,7 @@ import time
 import pandas as pd
 
 from .factory import get_loader, get_database
-from ..core import ForexPrice, CurrencyPair, make_pair
+from ..core import ForexPrices, CurrencyPair, make_pair
 from ..utils import Stopwatch
 
 CACHES_PATH = os.getenv("CACHES_PATH")
@@ -36,7 +36,7 @@ def fetch_forex_prices(
     source: str,
     start: str | pd.Timestamp | None = None,
     end: str | pd.Timestamp | None = None,
-) -> list[ForexPrice]:
+) -> list[ForexPrices]:
     """
     Fetch prices from the internet and save to SQLite Cache.
     Ignore if already have the price.
@@ -75,7 +75,7 @@ def load_forex_prices(
     source: str = "alpha_vantage",
     start: str | pd.Timestamp | None = None,
     end: str | pd.Timestamp | None = None,
-) -> ForexPrice | list[ForexPrice]:
+) -> ForexPrices | list[ForexPrices]:
     """Load prices from local SQLite cache"""
     start, end = _convert_start_end(start, end, 10000)
 

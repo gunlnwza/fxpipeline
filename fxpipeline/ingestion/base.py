@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 
-from ..core import CurrencyPair, ForexPrice
+from ..core import CurrencyPair, ForexPrices
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class ForexPriceLoader(ABC):
         start: pd.Timestamp,
         end: pd.Timestamp,
         interval: str = "1d",
-    ) -> ForexPrice:
+    ) -> ForexPrices:
         """Download forex data from internet, can raise errors"""
 
     def batch_download(
@@ -39,7 +39,7 @@ class ForexPriceLoader(ABC):
         start: pd.Timestamp,
         end: pd.Timestamp,
         interval: str = "1d",
-    ) -> list[ForexPrice]:
+    ) -> list[ForexPrices]:
         """
         Call download() in a loop.
         But, concrete class like YFinanceForex may optimize.
@@ -53,7 +53,7 @@ class ForexPriceLoader(ABC):
 
 class ForexPriceDatabase(ABC):
     @abstractmethod
-    def save(self, data: ForexPrice):
+    def save(self, data: ForexPrices):
         """Save `data`, append to table, overwrite existing rows"""
 
     @abstractmethod
@@ -63,7 +63,7 @@ class ForexPriceDatabase(ABC):
         source: str,
         start: pd.Timestamp | None = None,
         end: pd.Timestamp | None = None,
-    ) -> ForexPrice:
+    ) -> ForexPrices:
         """Load historical data of `pair` in range [`start`, `end`]"""
 
     @abstractmethod

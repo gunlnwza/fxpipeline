@@ -3,12 +3,12 @@ from typing import Optional
 
 import pandas as pd
 
-from .price import ForexPrice
+from .price import ForexPrices
 
 
 @dataclass
 class Data:
-    price: ForexPrice
+    price: ForexPrices
 
     def __len__(self) -> int:
         return len(self.price)

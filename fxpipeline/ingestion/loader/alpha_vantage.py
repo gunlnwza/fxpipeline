@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from ..base import ForexPriceLoader, APIError, NotDownloadedError
-from ...core import CurrencyPair, ForexPrice
+from ...core import CurrencyPair, ForexPrices
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class AlphaVantageForex(ForexPriceLoader):
         start: pd.Timestamp,
         end: pd.Timestamp,
         interval: str = "1d",
-    ) -> ForexPrice:
+    ) -> ForexPrices:
         """
         Download price from Alpha Vantage
 
@@ -76,4 +76,4 @@ class AlphaVantageForex(ForexPriceLoader):
 
         df = pd.read_csv(StringIO(res.text), index_col="timestamp", parse_dates=True)
         df = self._clean(df)
-        return ForexPrice(pair.copy(), self.name, df)
+        return ForexPrices(pair.copy(), self.name, df)

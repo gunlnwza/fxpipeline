@@ -6,7 +6,7 @@ from .currency import CurrencyPair
 
 
 @dataclass
-class ForexPrice:
+class ForexPrices:
     pair: CurrencyPair
     source: str
     df: pd.DataFrame
@@ -17,7 +17,7 @@ class ForexPrice:
         return self.pair.ticker
 
     def copy(self):
-        return ForexPrice(self.pair, self.source, self.df.copy())
+        return ForexPrices(self.pair, self.source, self.df.copy())
 
     def __len__(self):
         return len(self.df)

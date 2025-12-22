@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from ..base import ForexPriceDatabase
-from ...core import ForexPrice, CurrencyPair
+from ...core import ForexPrices, CurrencyPair
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class SQLiteDatabase(ForexPriceDatabase):
         self.conn.close()
         self.conn = None
 
-    def save(self, data: ForexPrice):
+    def save(self, data: ForexPrices):
         df = data.df.copy()
         df.reset_index(inplace=True)
         df["source"] = data.source
@@ -61,7 +61,7 @@ class SQLiteDatabase(ForexPriceDatabase):
         source: str,
         start: pd.Timestamp | None = None,
         end: pd.Timestamp | None = None,
-    ) -> ForexPrice:
+    ) -> ForexPrices:
         sql = """
             SELECT *
             FROM Prices
@@ -82,7 +82,7 @@ class SQLiteDatabase(ForexPriceDatabase):
         )
         df.index = pd.to_datetime(df.index)
         df.drop(["source", "ticker"], axis=1, inplace=True)
-        return ForexPrice(pair.copy(), source, df)
+        return ForexPrices(pair.copy(), source, df)
     
     def have(
         self, pair: CurrencyPair, source: str, start: pd.Timestamp, end: pd.Timestamp

@@ -6,7 +6,7 @@ from urllib3.exceptions import MaxRetryError
 from polygon import RESTClient
 
 from ..base import ForexPriceLoader, NotDownloadedError
-from ...core import CurrencyPair, ForexPrice
+from ...core import CurrencyPair, ForexPrices
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class MassiveForex(ForexPriceLoader):
         start: pd.Timestamp,
         end: pd.Timestamp,
         interval: str = "1d",
-    ) -> ForexPrice:
+    ) -> ForexPrices:
         logger.debug(f"Downloading {pair} with Massive API")
 
         aggs = None
@@ -61,4 +61,4 @@ class MassiveForex(ForexPriceLoader):
 
         df = pd.DataFrame(aggs)
         df = self._clean(df)
-        return ForexPrice(pair.copy(), self.name, df)
+        return ForexPrices(pair.copy(), self.name, df)
