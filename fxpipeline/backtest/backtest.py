@@ -10,6 +10,7 @@ class Backtester:
     - Show only latest 100 bars.
     - Only one trade at a time.
     """
+
     def __init__(self, data: Data, strategy: Strategy):
         # Config
         self.data = data
@@ -18,8 +19,7 @@ class Backtester:
 
         # State
         self.window = CandlesWindow(
-            pair=data.price.pair, 
-            ohlcv=data.price.df.iloc[:self.bars].to_numpy()
+            pair=data.price.pair, ohlcv=data.price.df.iloc[: self.bars].to_numpy()
         )
         self.trade = None
 
@@ -56,7 +56,7 @@ class Backtester:
 
     def run(self):
         df = self.data.price.df
-        for i, t_ohlcv in enumerate(df.iloc[self.bars:].iterrows()):
+        for i, t_ohlcv in enumerate(df.iloc[self.bars :].iterrows()):
             _, ohlcv = t_ohlcv
             self.manage_trade()
 

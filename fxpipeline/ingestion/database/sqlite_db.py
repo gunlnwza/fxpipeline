@@ -83,7 +83,7 @@ class SQLiteDatabase(ForexPriceDatabase):
         df.index = pd.to_datetime(df.index)
         df.drop(["source", "ticker"], axis=1, inplace=True)
         return ForexPrices(pair.copy(), source, df)
-    
+
     def have(
         self, pair: CurrencyPair, source: str, start: pd.Timestamp, end: pd.Timestamp
     ) -> bool:
