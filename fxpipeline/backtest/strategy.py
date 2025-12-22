@@ -6,11 +6,17 @@ class Strategy:
         pass
 
     def get_intent(self, window: CandlesWindow):
-        cur = window.candle(-1)
-        prev = window.candle(-2)
+        n = 3
+        C = [window.candle(i) for i in range(-n, 0)]
+        closes = [c.close for c in C]
+        p = closes[-1]
 
-        if cur.close > prev.close:
-            risk = cur.close - cur.low
-            return TradeIntent(
-                window.pair, cur.close, cur.close - risk, cur.close + risk * 2
-            )
+        soldiers_up = all(c.body > 0 for c in C)
+        soldiers_down = all(c.body < 0 for c in C)
+
+        if soldiers_up:
+            risk = p - closes[-n] + 0.1
+            return TradeIntent(window.pair, p, p - risk, p + risk * 2)
+        elif soldiers_down:
+            risk = closes[-n] - p + 0.1
+            return TradeIntent(window.pair, p, p + risk, p - risk * 2)
