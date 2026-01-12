@@ -8,13 +8,15 @@ from dotenv import load_dotenv
 from fxpipeline.core import make_pair, CurrencyPair
 from fxpipeline.ingestion import fetch_forex_prices
 from fxpipeline.utils import handle_sigint
+from fxpipeline.commands.fetch import register_fetch
+from fxpipeline.commands.simulate import register_simulate
 
 logger = logging.getLogger(__name__)
 
 
-def config_logging(debug):
+def config_logging():
     logging.basicConfig(
-        level=logging.DEBUG if debug else logging.INFO,
+        level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[logging.StreamHandler()],
@@ -50,25 +52,18 @@ def parse_tickers(tickers: list[str]) -> list[CurrencyPair]:
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("tickers", nargs="+")
-    parser.add_argument("-s", "--source", default="alpha_vantage")
-    parser.add_argument("--start")
-    parser.add_argument("--end")
-    parser.add_argument("-d", "--debug", action="store_true")
-    args = parser.parse_args()
-
     load_dotenv()
     handle_sigint()
-    config_logging(args.debug)
+    config_logging()
 
-    try:
-        pairs = parse_tickers(args.tickers)
-    except (AssertionError, ValueError) as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(prog="fxpipeline")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    fetch_forex_prices(pairs, args.source, args.start, args.end)
+    register_fetch(subparsers)
+    register_simulate(subparsers)
+
+    args = parser.parse_args()
+    args.func(args)
 
 
 if __name__ == "__main__":
