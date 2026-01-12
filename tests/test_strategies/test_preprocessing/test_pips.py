@@ -1,6 +1,6 @@
 import pandas as pd
 
-from fxpipeline.preprocessing.pips import pip_diff
+from fxpipeline.strategies.preprocessing.pips import pip_diff
 
 
 def test_pip_diff_increase_JPY():

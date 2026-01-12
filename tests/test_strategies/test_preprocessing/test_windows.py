@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from fxpipeline.preprocessing import get_windows, get_standard_windows
+from fxpipeline.strategies.preprocessing import get_windows, get_standard_windows
 
 
 # --- get_windows

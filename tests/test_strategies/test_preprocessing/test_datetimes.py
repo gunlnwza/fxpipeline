@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 
-from fxpipeline.preprocessing.datetimes import extract_timestamp
+from fxpipeline.strategies.preprocessing.datetimes import extract_timestamp
 
 
 @pytest.fixture

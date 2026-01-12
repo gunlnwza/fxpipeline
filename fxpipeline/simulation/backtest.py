@@ -1,4 +1,4 @@
-from .strategy import Strategy
+from ..strategies.models.model_example import Strategy
 from ..core import Data, Trade, TradeIntent, CandlesWindow
 
 

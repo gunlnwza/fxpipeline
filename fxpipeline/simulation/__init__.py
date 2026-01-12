@@ -1,5 +1,5 @@
 from .backtest import Backtester
 
-from .strategy import Strategy
+from ..strategies.models.model_example import Strategy
 
 __all__ = ("Backtester", "Strategy")

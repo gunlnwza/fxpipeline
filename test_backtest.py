@@ -6,7 +6,7 @@ import mplfinance as mpf
 
 from fxpipeline.core import Data, ForexPrices, CurrencyPair
 from fxpipeline.ingestion import load_forex_prices
-from fxpipeline.backtest import Backtester, Strategy
+from fxpipeline.simulation import Backtester, Strategy
 from fxpipeline.utils import Stopwatch
 
 import random

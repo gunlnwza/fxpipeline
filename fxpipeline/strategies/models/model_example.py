@@ -1,4 +1,4 @@
-from ..core import CandlesWindow, TradeIntent
+from ...core import CandlesWindow, TradeIntent
 
 
 class Strategy:
