@@ -7,9 +7,10 @@ lint:
 format:
 	ruff format
 
-PAT ?= .
+OPT :=
 test:
-	PYTHONPATH=. pytest -k $(PAT)
+	@clear
+	@pytest $(OPT)
 
 cov:
 	PYTHONPATH=. pytest --cov=fxpipeline --cov-report=term --cov-report=html
