@@ -20,7 +20,7 @@ class Stopwatch:
             return time.perf_counter() - self._start
 
     def __repr__(self):
-        return f"Stopwatch({self.time:.3f}s)"
+        return f"Stopwatch({self.time:.3f})"
 
     def __str__(self):
-        return f"{self.time:.3f}s"
+        return f"{self.time:.3f}"

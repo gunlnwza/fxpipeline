@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pytest
 
-from fxpipeline.preprocessing.labeling import should_enter, label_entry_signal
+from fxpipeline.strategies.preprocessing.labeling import should_enter, label_entry_signal
 
 
 def _make_lines(

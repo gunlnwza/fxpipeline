@@ -1,6 +1,6 @@
 import pandas as pd
 
-from fxpipeline.preprocessing.smoothing import (
+from fxpipeline.strategies.preprocessing.smoothing import (
     series_to_segments,
     smooth_segments,
     segments_to_series,
