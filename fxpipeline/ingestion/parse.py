@@ -2,8 +2,6 @@ import pandas as pd
 
 from ..core import CurrencyPair, make_pair
 
-DEFAULT_LOOKBACK_DAYS = 42000
-
 
 def parse_pairs(pairs: str | CurrencyPair | list[str | CurrencyPair]) -> list[CurrencyPair]:
     if isinstance(pairs, (str, CurrencyPair)):
@@ -38,14 +36,14 @@ def capitalize_source(source: str) -> str:
         return "Yahoo Finance"
 
 
-def parse_start_end(start=None, end=None, days=None):
-    if days is None:
-        days = DEFAULT_LOOKBACK_DAYS
+def parse_start_end(start=None, end=None, default_lookback_days=None):
+    if default_lookback_days is None:
+        default_lookback_days = 36500
 
     if end is None:
         end = pd.Timestamp.now() - pd.Timedelta(days=1)  # chosen because yesterday price is settled
     if start is None:
-        start = end - pd.Timedelta(days=days)
+        start = end - pd.Timedelta(days=default_lookback_days)
 
     start = pd.Timestamp(start)
     end = pd.Timestamp(end)
