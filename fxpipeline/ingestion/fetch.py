@@ -1,4 +1,5 @@
 import logging
+import time
 
 import pandas as pd
 
@@ -70,10 +71,11 @@ def fetch_forex_prices(
             status.update(f"[bold]{pair}[/]: Downloading")
             try:
                 result, fetch_timer = _fetch_single_pair(pair, source, start, end, db, loader, forced)
+                if result == "downloaded":
+                    downloaded += 1
+                time.sleep(1)  # spacing out API calls
             except (NotDownloadedError, APIError) as e:
                 result, fetch_timer = e, None
-            if result == "downloaded":
-                downloaded += 1
             print_pair_result(console, pair, result, fetch_timer)
 
     db.close()
