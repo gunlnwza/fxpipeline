@@ -58,7 +58,7 @@ def fetch_forex_prices(
 
     pairs = parse_pairs(pairs)
     source = parse_source(source)
-    start, end = parse_start_end(start, end, days=30)
+    start, end = parse_start_end(start, end, default_lookback_days=90)
     db = get_database("sqlite")
     loader = get_loader(source)
     console.print(f"[bold green]Fetching Forex Prices[/] | "
