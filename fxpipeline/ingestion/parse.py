@@ -6,7 +6,7 @@ DEFAULT_LOOKBACK_DAYS = 42000
 
 
 def parse_pairs(pairs: str | CurrencyPair | list[str | CurrencyPair]) -> list[CurrencyPair]:
-    if isinstance(pairs, str) or isinstance(pairs, CurrencyPair):
+    if isinstance(pairs, (str, CurrencyPair)):
         return [make_pair(pairs)]
     else:
         res = []

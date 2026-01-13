@@ -8,6 +8,7 @@ from rich.status import Status
 
 from .factory import get_loader, get_database
 from .parse import parse_pairs, parse_source, parse_start_end, capitalize_source
+from .base import NotDownloadedError, APIError
 from ..core import ForexPrices, CurrencyPair
 from ..utils import Stopwatch
 
@@ -24,11 +25,18 @@ def _fetch_single_pair(pair, source, start, end, db, loader):
     return "downloaded", timer
 
 
-def print_pair_result(console, pair, status, timer: Stopwatch):
-    if timer is None:
+def print_pair_result(console, pair, result, timer: Stopwatch):
+    if result == "cached":
         console.print(f"[bold]{pair}[/]: [green]Cached[/]")
+
+    elif result == "downloaded":
+        console.print(f"[bold]{pair}[/]: [green]Downloaded[/] in [not bold cyan]{timer.time:.1f}s[/]")
+    
+    elif isinstance(result, (NotDownloadedError, APIError)):
+        console.print(f"[bold]{pair}: [red]{result}[/]")
+
     else:
-        console.print(f"[bold]{pair}[/]: [green]Downloaded[/] in [not bold cyan]{timer.time:.3f}s[/]")
+        console.print(f"[bold]{pair}[/]: {result}")
 
 
 def fetch_forex_prices(
@@ -44,7 +52,7 @@ def fetch_forex_prices(
     console = Console()
     status = Status("", spinner="dots")
 
-    total_time = Stopwatch()
+    timer = Stopwatch()
     downloaded = 0
 
     pairs = parse_pairs(pairs)
@@ -59,14 +67,17 @@ def fetch_forex_prices(
     with Live(status, console=console, refresh_per_second=10, transient=True):
         for pair in pairs:
             status.update(f"[bold]{pair}[/]: Downloading")
-            result, timer = _fetch_single_pair(pair, source, start, end, db, loader)
+            try:
+                result, fetch_timer = _fetch_single_pair(pair, source, start, end, db, loader)
+            except (NotDownloadedError, APIError) as e:
+                result, fetch_timer = e, None
             if result == "downloaded":
                 downloaded += 1
-            print_pair_result(console, pair, status, timer)
+            print_pair_result(console, pair, result, fetch_timer)
 
     db.close()
-    console.print(f"\n[bold green]{downloaded} pairs downloaded[/] | "
-                  f"[green]Completed[/] in [not bold cyan]{total_time}s[/]")
+    console.print(f"\n[bold {"green" if downloaded > 0 else "default"}]{downloaded} pairs downloaded[/] | "
+                  f"[green]Completed[/] in [not bold cyan]{timer.time:.1f}s[/]")
 
 
 def load_forex_prices(
@@ -82,6 +93,6 @@ def load_forex_prices(
     res = [db.load(pair, source, start, end) for pair in parse_pairs(pairs)]
     db.close()
 
-    if isinstance(pairs, str) or isinstance(pairs, CurrencyPair):
+    if isinstance(pairs, (str, CurrencyPair)):
         return res[0]
     return res

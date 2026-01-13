@@ -1,7 +1,8 @@
 all:
 
 lint:
-	ruff check .
+	@clear
+	@ruff check .
 
 format:
 	ruff format
