@@ -22,7 +22,6 @@ def make_layout() -> Layout:
     layout = Layout(name="root")
 
     layout.split(
-        Layout(name="header", size=3),
         Layout(name="main", ratio=1),
         Layout(name="footer", size=7),
     )
@@ -154,7 +153,7 @@ progress_table.add_row(
 
 
 layout = make_layout()
-layout["header"].update(Header())
+# layout["header"].update(Header())
 layout["body"].update(make_sponsor_message())
 layout["box2"].update(Panel(make_syntax(), border_style="green"))
 layout["box1"].update(Panel(layout.tree, border_style="red"))

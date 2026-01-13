@@ -4,7 +4,7 @@ from rich.live import Live
 from rich.table import Table
 from rich.layout import Layout
 from rich.panel import Panel
-from rich.console import Console
+from rich.text import Text
 
 from fxpipeline.ingestion import load_forex_prices
 from fxpipeline.simulation import Simulation
@@ -13,14 +13,20 @@ from fxpipeline.simulation import Simulation
 def make_layout():
     layout = Layout(name="root")
 
-    layout.split_row(
+    layout.split_column(
+        Layout(name="header", size=1),  # Needed for correct rendering in VS Code terminal
+        Layout(name="body")
+    )
+    layout["body"].split_row(
         Layout(name="left"),
         Layout(name="positions"),
     )
     layout["left"].split_column(
-        Layout(name="price", size=7),
+        Layout(name="price", size=9),
         Layout(name="stats")
     )
+
+    layout["header"].update("")
     return layout
 
 
