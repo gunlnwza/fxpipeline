@@ -38,7 +38,7 @@ def capitalize_source(source: str) -> str:
 
 def parse_start_end(start=None, end=None, default_lookback_days=None):
     if default_lookback_days is None:
-        days = 36500
+        default_lookback_days = 36500
 
     if end is None:
         end = pd.Timestamp.now() - pd.Timedelta(days=1)  # chosen because yesterday price is settled
