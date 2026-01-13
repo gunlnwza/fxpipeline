@@ -78,8 +78,6 @@ class AlphaVantageForex(ForexPriceLoader):
                 raise APIRateLimit(f"Alpha Vantage API rate limit: {msg}")
             raise APIError(f"Alpha Vantage API error: {msg}")
 
-        time.sleep(1)  # spreading out the API call
-
         df = pd.read_csv(StringIO(res.text), index_col="timestamp", parse_dates=True)
         df = self._clean(df)
         return ForexPrices(pair.copy(), self.name, df)

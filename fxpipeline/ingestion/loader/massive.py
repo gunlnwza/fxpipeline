@@ -37,17 +37,13 @@ class MassiveForex(ForexPriceLoader):
         aggs = None
         client = RESTClient(self.api_key)
         time_wait = 1
-        while True:
+        while not aggs:
             try:
                 aggs = list(client.list_aggs(f"C:{pair}", 1, "day", start, end, adjusted="true", sort="asc"))
-                break
             except MaxRetryError:
                 logger.debug(f"Massive API rate limit exceeded, retrying in {time_wait}s")
                 time_wait *= 2
                 time.sleep(time_wait)
-
-        if aggs is None:
-            raise NotDownloadedError("Massive: data is not downloaded")
 
         df = pd.DataFrame(aggs)
         df = self._clean(df)

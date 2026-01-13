@@ -1,61 +1,61 @@
-from dataclasses import dataclass
-from enum import Enum
+# from dataclasses import dataclass
+# from enum import Enum
 
-from ..core import CurrencyPair
-
-
-class TradeSide(Enum):
-    BUY = 1
-    SELL = -1
+# from ..core import CurrencyPair
 
 
-@dataclass
-class ATrade:
-    pair: CurrencyPair
-    open_price: float
-    stop_loss: float
-    take_profit: float
-
-    @property
-    def prices(self):
-        return self.open_price, self.stop_loss, self.take_profit
-
-    def __post_init__(self):
-        p, sl, tp = self.prices
-        assert (sl < p < tp) or (sl > p > tp)
-
-    @property
-    def type(self) -> TradeSide:
-        if self.stop_loss < self.open_price:
-            return TradeSide.BUY
-        else:
-            return TradeSide.SELL
+# class TradeSide(Enum):
+#     BUY = 1
+#     SELL = -1
 
 
-@dataclass
-class TradeIntent(ATrade):
-    pass
+# @dataclass
+# class ATrade:
+#     pair: CurrencyPair
+#     open_price: float
+#     stop_loss: float
+#     take_profit: float
+
+#     @property
+#     def prices(self):
+#         return self.open_price, self.stop_loss, self.take_profit
+
+#     def __post_init__(self):
+#         p, sl, tp = self.prices
+#         assert (sl < p < tp) or (sl > p > tp)
+
+#     @property
+#     def type(self) -> TradeSide:
+#         if self.stop_loss < self.open_price:
+#             return TradeSide.BUY
+#         else:
+#             return TradeSide.SELL
 
 
-@dataclass
-class Trade(ATrade):
-    close_price: float = None
+# @dataclass
+# class TradeIntent(ATrade):
+#     pass
 
-    @property
-    def pips(self):
-        assert self.close_price is not None
 
-        return (self.close_price - self.open_price) / self.pair.pip
+# @dataclass
+# class Trade(ATrade):
+#     close_price: float = None
 
-    def must_close(self, price: float):
-        _, sl, tp = self.prices
-        if self.type == TradeSide.BUY:
-            if price < sl or price > tp:
-                return True
-        else:
-            if price > sl or price < tp:
-                return True
-        return False
+#     @property
+#     def pips(self):
+#         assert self.close_price is not None
 
-    def close(self, price: float):
-        self.close_price = price
+#         return (self.close_price - self.open_price) / self.pair.pip
+
+#     def must_close(self, price: float):
+#         _, sl, tp = self.prices
+#         if self.type == TradeSide.BUY:
+#             if price < sl or price > tp:
+#                 return True
+#         else:
+#             if price > sl or price < tp:
+#                 return True
+#         return False
+
+#     def close(self, price: float):
+#         self.close_price = price
