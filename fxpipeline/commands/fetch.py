@@ -1,24 +1,10 @@
 import sys
 import logging
-from itertools import combinations
 
-from fxpipeline.core import make_pair, CurrencyPair
+from fxpipeline.utils import parse_tickers
 from fxpipeline.ingestion import fetch_forex_prices
 
 logger = logging.getLogger(__name__)
-
-
-def parse_tickers(tickers: list[str]) -> list[CurrencyPair]:
-    global_curs = ("EUR", "GBP", "AUD", "NZD", "CAD", "CHF", "JPY")
-
-    if tickers[0] in ("major", "minor"):
-        assert len(tickers) == 1, f"Invalid ticker list {tickers}"
-    if tickers[0] == "major":
-        return [make_pair(a + "USD") for a in global_curs]
-    elif tickers[0] == "minor":
-        return [make_pair(a + b) for a, b in combinations(global_curs, 2)]
-
-    return [make_pair(t) for t in tickers]
 
 
 def run(args):

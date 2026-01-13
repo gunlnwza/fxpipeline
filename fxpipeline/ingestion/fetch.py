@@ -8,10 +8,9 @@ from rich.live import Live
 from rich.status import Status
 
 from .factory import get_loader, get_database
-from .parse import parse_pairs, parse_source, parse_start_end, capitalize_source
 from .error import NotDownloadedError, APIError
 from ..core import ForexPrices, CurrencyPair
-from ..utils import Stopwatch
+from ..utils import Stopwatch, parse_pairs, parse_source, parse_start_end, capitalize_source
 
 logger = logging.getLogger(__file__)
 
