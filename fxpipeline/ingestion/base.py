@@ -8,16 +8,6 @@ from ..core import CurrencyPair, ForexPrices
 logger = logging.getLogger(__name__)
 
 
-class APIError(Exception):
-    def __init__(self, message="API error"):
-        super().__init__(message)
-
-
-class NotDownloadedError(Exception):
-    def __init__(self, message="Not downloaded"):
-        super().__init__(message)
-
-
 class ForexPriceLoader(ABC):
     def __init__(self, name: str, api_key: str):
         self.name = name

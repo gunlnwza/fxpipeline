@@ -1,11 +1,13 @@
 import logging
 from io import StringIO
 import requests
+import time
 
 import numpy as np
 import pandas as pd
 
-from ..base import ForexPriceLoader, APIError, NotDownloadedError
+from ..base import ForexPriceLoader
+from ..error import APIError, APIRateLimit, NotDownloadedError
 from ...core import CurrencyPair, ForexPrices
 
 
@@ -72,7 +74,11 @@ class AlphaVantageForex(ForexPriceLoader):
         content_type = res.headers.get("Content-Type", "")
         if content_type and "json" in content_type.lower():
             msg = res.json()
+            if "rate limit" in msg["Note"].lower():
+                raise APIRateLimit(f"Alpha Vantage API rate limit: {msg}")
             raise APIError(f"Alpha Vantage API error: {msg}")
+
+        time.sleep(1)  # spreading out the API call
 
         df = pd.read_csv(StringIO(res.text), index_col="timestamp", parse_dates=True)
         df = self._clean(df)

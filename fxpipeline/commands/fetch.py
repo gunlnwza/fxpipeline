@@ -32,6 +32,7 @@ def run(args):
         args.source,
         args.start,
         args.end,
+        args.forced
     )
 
 
@@ -41,5 +42,6 @@ def register_fetch(subparsers):
     parser.add_argument("-s", "--source", default="alpha_vantage")
     parser.add_argument("--start")
     parser.add_argument("--end")
+    parser.add_argument("-f", "--forced", action="store_true")
 
     parser.set_defaults(func=run)

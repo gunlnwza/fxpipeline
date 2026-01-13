@@ -8,15 +8,15 @@ from rich.status import Status
 
 from .factory import get_loader, get_database
 from .parse import parse_pairs, parse_source, parse_start_end, capitalize_source
-from .base import NotDownloadedError, APIError
+from .error import NotDownloadedError, APIError
 from ..core import ForexPrices, CurrencyPair
 from ..utils import Stopwatch
 
 logger = logging.getLogger(__file__)
 
 
-def _fetch_single_pair(pair, source, start, end, db, loader):
-    if db.have(pair, source, start, end):
+def _fetch_single_pair(pair, source, start, end, db, loader, forced):
+    if not forced and db.have(pair, source, start, end):
         return "cached", None
 
     timer = Stopwatch()
@@ -44,6 +44,7 @@ def fetch_forex_prices(
     source: str,
     start: str | pd.Timestamp | None = None,
     end: str | pd.Timestamp | None = None,
+    forced: bool = False
 ):
     """
     Fetch prices from the internet and save to SQLite Cache.
@@ -68,7 +69,7 @@ def fetch_forex_prices(
         for pair in pairs:
             status.update(f"[bold]{pair}[/]: Downloading")
             try:
-                result, fetch_timer = _fetch_single_pair(pair, source, start, end, db, loader)
+                result, fetch_timer = _fetch_single_pair(pair, source, start, end, db, loader, forced)
             except (NotDownloadedError, APIError) as e:
                 result, fetch_timer = e, None
             if result == "downloaded":
@@ -88,6 +89,7 @@ def load_forex_prices(
 ) -> ForexPrices | list[ForexPrices]:
     """Load prices from local SQLite cache"""
     start, end = parse_start_end(start, end)
+    source = parse_source(source)
 
     db = get_database("sqlite")
     res = [db.load(pair, source, start, end) for pair in parse_pairs(pairs)]

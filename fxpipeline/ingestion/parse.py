@@ -43,7 +43,7 @@ def parse_start_end(start=None, end=None, days=None):
         days = DEFAULT_LOOKBACK_DAYS
 
     if end is None:
-        end = pd.Timestamp.now()
+        end = pd.Timestamp.now() - pd.Timedelta(days=1)  # chosen because yesterday price is settled
     if start is None:
         start = end - pd.Timedelta(days=days)
 

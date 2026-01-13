@@ -10,6 +10,14 @@ from ...core import ForexPrices, CurrencyPair
 logger = logging.getLogger(__name__)
 
 
+def adjust_to_weekday(ts: pd.Timestamp, delta_day: int):
+    """Move `ts` to be weekday, then make it midnight"""
+    dt = pd.Timedelta(days=delta_day)
+    while not (ts.weekday() <= 4):
+        ts += dt
+    return ts.normalize()
+
+
 class SQLiteDatabase(ForexPriceDatabase):
     def __init__(self, database: str):
         path = Path(database)
@@ -87,15 +95,6 @@ class SQLiteDatabase(ForexPriceDatabase):
     def have(
         self, pair: CurrencyPair, source: str, start: pd.Timestamp, end: pd.Timestamp
     ) -> bool:
-        # adjust if tips are weekends
-        while start.weekday() >= 5:
-            start += pd.Timedelta(days=1)
-        start = start.normalize()
-
-        while end.weekday() >= 5:
-            end -= pd.Timedelta(days=1)
-        end = end.normalize()
-
         cursor = self.conn.execute(
             """
             SELECT MIN(timestamp), MAX(timestamp)
@@ -104,14 +103,15 @@ class SQLiteDatabase(ForexPriceDatabase):
             """,
             (source, pair.ticker),
         )
-
         res = cursor.fetchone()
-        min_time, max_time = res
+        min_ts, max_ts = res
 
-        if min_time is None or max_time is None:
-            return False  # no rows
+        if min_ts is None:  # no rows
+            return False
 
-        return pd.Timestamp(min_time) <= start and pd.Timestamp(max_time) >= end
+        query_start = adjust_to_weekday(start, delta_day=1)
+        query_end = adjust_to_weekday(end, delta_day=-1)
+        return pd.Timestamp(min_ts) <= query_start and query_end <= pd.Timestamp(max_ts)
 
     def last_price(self, pair: CurrencyPair, source: str) -> float:
         cursor = self.conn.execute(
