@@ -70,6 +70,7 @@ notebooks/
 .env.*
 **/.env
 **/.env.*
+!.env.example
 
 # =====================================
 # Project-specific trash or scratch
