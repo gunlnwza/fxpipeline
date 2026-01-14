@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 from .error import InvalidOrder, OrderNotClosed
 
+# TODO: refactor
+
 
 @dataclass
 class Order:
@@ -39,16 +41,20 @@ class Order:
         if self.side == "buy":
             if l <= self.sl:
                 self.closed = True
+                self.close_price = self.sl
                 self.close_reason = "sl"
             elif h >= self.tp:
                 self.closed = True
+                self.close_price = self.tp
                 self.close_reason = "tp"
         else:
             if h >= self.sl:
                 self.closed = True
+                self.close_price = self.sl
                 self.close_reason = "sl"
             elif l <= self.tp:
                 self.closed = True
+                self.close_price = self.tp
                 self.close_reason = "tp"
 
     @property
@@ -64,3 +70,10 @@ class Order:
             return self.close_price - self.open_price
         else:
             return self.open_price - self.close_price
+
+    def pnl(self, price):
+        """Unrealized profit"""
+        if self.side == "buy":
+            return price - self.open_price
+        else:
+            return self.open_price - price
