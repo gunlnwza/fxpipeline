@@ -4,9 +4,10 @@ import time
 import pandas as pd
 from urllib3.exceptions import MaxRetryError
 from polygon import RESTClient
+from polygon.exceptions import BadResponse as PolygonBadResponse
 
 from ..base import ForexPriceLoader
-from ..error import NotDownloadedError
+from ..error import APIError
 from ...core import CurrencyPair, ForexPrices
 
 logger = logging.getLogger(__name__)
@@ -41,9 +42,10 @@ class MassiveForex(ForexPriceLoader):
             try:
                 aggs = list(client.list_aggs(f"C:{pair}", 1, "day", start, end, adjusted="true", sort="asc"))
             except MaxRetryError:
-                logger.debug(f"Massive API rate limit exceeded, retrying in {time_wait}s")
                 time_wait *= 2
                 time.sleep(time_wait)
+            except PolygonBadResponse as e:
+                raise APIError(e)
 
         df = pd.DataFrame(aggs)
         df = self._clean(df)
