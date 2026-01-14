@@ -20,6 +20,9 @@ def adjust_to_weekday(ts: pd.Timestamp, delta_day: int):
 
 class SQLiteDatabase(ForexPriceDatabase):
     def __init__(self, database: str):
+        if not isinstance(database, str):
+            raise ValueError(f"initializing database: '{database}' is not a string")
+
         path = Path(database)
         path.parent.mkdir(parents=True, exist_ok=True)
 

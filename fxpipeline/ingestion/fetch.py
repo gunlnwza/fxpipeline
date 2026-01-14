@@ -55,12 +55,14 @@ def fetch_forex_prices(
 
     timer = Stopwatch()
     downloaded = 0
+    error = False
 
     pairs = parse_pairs(pairs)
     source = parse_source(source)
     start, end = parse_start_end(start, end, default_lookback_days=90)
     db = get_database("sqlite")
     loader = get_loader(source)
+
     console.print(f"[bold green]Fetching Forex Prices[/] | "
                   f"{capitalize_source(source)} | "
                   f"[not bold cyan]{start.date()} → {end.date()}[/]\n")
@@ -72,14 +74,26 @@ def fetch_forex_prices(
                 result, fetch_timer = _fetch_single_pair(pair, source, start, end, db, loader, forced)
                 if result == "downloaded":
                     downloaded += 1
-                time.sleep(1)  # spacing out API calls
+                    print_pair_result(console, pair, result, fetch_timer)
+                    time.sleep(1)  # spacing out API calls
+                else:
+                    print_pair_result(console, pair, result, fetch_timer)
+                    time.sleep(0.1)
             except (NotDownloadedError, APIError) as e:
                 result, fetch_timer = e, None
-            print_pair_result(console, pair, result, fetch_timer)
+                print_pair_result(console, pair, result, fetch_timer)
+                error = True
+                break  # stop if error
 
     db.close()
-    console.print(f"\n[bold {"green" if downloaded > 0 else "default"}]{downloaded} pairs downloaded[/] | "
-                  f"[green]Completed[/] in [not bold cyan]{timer.time:.1f}s[/]")
+
+    color = "default"
+    if error:
+        color = "red"
+    elif downloaded > 0:
+        color = "green"
+    console.print(f"\n[bold {color}]{downloaded} pairs downloaded[/] | "
+                  f"[{color}]Completed in[/] [not bold cyan]{timer.time:.1f}s[/]")
 
 
 def load_forex_prices(

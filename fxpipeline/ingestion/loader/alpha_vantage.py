@@ -74,7 +74,7 @@ class AlphaVantageForex(ForexPriceLoader):
         content_type = res.headers.get("Content-Type", "")
         if content_type and "json" in content_type.lower():
             msg = res.json()
-            if "rate limit" in msg["Note"].lower():
+            if "rate limit" in str(msg).lower():
                 raise APIRateLimit(f"Alpha Vantage API rate limit: {msg}")
             raise APIError(f"Alpha Vantage API error: {msg}")
 
