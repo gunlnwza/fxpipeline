@@ -36,6 +36,10 @@ class Simulation:
         return self.i >= len(self.ohlcv) - 1
     
     @property
+    def current_ohlcv(self):
+        return self.ohlcv.iloc[self.i]
+
+    @property
     def price(self):
         return self.ohlcv.iloc[self.i]["close"]
 
