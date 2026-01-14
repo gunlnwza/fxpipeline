@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .error import InvalidOrder
+from .error import InvalidOrder, OrderNotClosed
 
 
 @dataclass
@@ -50,3 +50,17 @@ class Order:
             elif l <= self.tp:
                 self.closed = True
                 self.close_reason = "tp"
+
+    @property
+    def price_diff(self):
+        """
+        Profit made in term of price difference
+        
+        can be multiplied with pip amount later
+        """
+        if not self.closed:
+            raise OrderNotClosed
+        if self.side == "buy":
+            return self.close_price - self.open_price
+        else:
+            return self.open_price - self.close_price

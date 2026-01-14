@@ -4,3 +4,7 @@ class EndOfSimulation(Exception):
 
 class InvalidOrder(Exception):
     pass
+
+
+class OrderNotClosed(Exception):
+    pass
